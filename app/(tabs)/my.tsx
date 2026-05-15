@@ -3,16 +3,16 @@ import { StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
-export default function HomeScreen() {
+export default function MyScreen() {
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Home</ThemedText>
-        <ThemedText>오늘의 이동과 활동을 한눈에 확인하는 화면입니다.</ThemedText>
+        <ThemedText type="title">My</ThemedText>
+        <ThemedText>프로필과 앱 설정을 관리하는 화면입니다.</ThemedText>
       </ThemedView>
-      <ThemedView style={styles.section}>
-        <ThemedText type="subtitle">최근 요약</ThemedText>
-        <ThemedText>지도, 기록, 내 정보 탭으로 이어지는 시작점입니다.</ThemedText>
+      <ThemedView style={styles.profileBox}>
+        <ThemedText type="subtitle">내 정보</ThemedText>
+        <ThemedText>로그인 정보와 개인 설정이 이곳에 표시됩니다.</ThemedText>
       </ThemedView>
     </ThemedView>
   );
@@ -28,7 +28,11 @@ const styles = StyleSheet.create({
   titleContainer: {
     gap: 8,
   },
-  section: {
+  profileBox: {
+    borderColor: '#D0D7DE',
+    borderRadius: 8,
+    borderWidth: 1,
     gap: 8,
+    padding: 16,
   },
 });
