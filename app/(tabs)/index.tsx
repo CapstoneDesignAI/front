@@ -1,9 +1,11 @@
 import Button from "@/components/buttons/Button";
 import KakaoButton from "@/components/buttons/KakaoButton";
+import { useAuthStore } from "@/store/login/useAuthStore";
 import React from "react";
 import { Text, View } from "react-native";
 
 export default function HomeScreen() {
+  const { isLogin } = useAuthStore();
   return (
     <View className="flex-1 bg-background">
       <View className="flex-1 items-center justify-center p-6">
@@ -15,6 +17,11 @@ export default function HomeScreen() {
             이 텍스트의 색상과 배경의 둥근 모서리가 보인다면 Tailwind가
             정상적으로 적용된 것입니다.
           </Text>
+          {isLogin ? (
+            <Text className="text-green-500 mt-4">로그인 상태입니다.</Text>
+          ) : (
+            <Text className="text-red-500 mt-4">로그아웃 상태입니다.</Text>
+          )}
           <Button title="테스트 버튼" size="large" color="gradient" />
           <KakaoButton />
         </View>

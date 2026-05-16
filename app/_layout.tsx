@@ -2,7 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -10,7 +10,7 @@ import './global.css';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuthStore } from '@/store/login/useAuthStore';
+import { useKakaoLoginLink } from '@/hooks/use-kakao-login-link';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -20,6 +20,7 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const handleKakaoLoginLink = useKakaoLoginLink();
   const [queryClient] = useState(() => new QueryClient());
   const [loaded] = useFonts({
     Pretendard: require('@/assets/font/Pretendard-Regular.otf'),
@@ -34,46 +35,18 @@ export default function RootLayout() {
   }, [loaded]);
 
   useEffect(() => {
-    const handleLoginSuccessUrl = (url: string) => {
-      const parsed = Linking.parse(url);
-
-      if (parsed.path !== 'login/success') {
-        return;
-      }
-
-      const accessTokenParam = parsed.queryParams?.accessToken;
-      const refreshTokenParam = parsed.queryParams?.refreshToken;
-      const accessToken = Array.isArray(accessTokenParam)
-        ? accessTokenParam[0]
-        : accessTokenParam;
-      const refreshToken = Array.isArray(refreshTokenParam)
-        ? refreshTokenParam[0]
-        : refreshTokenParam;
-
-      if (!accessToken || !refreshToken) {
-        return;
-      }
-
-      useAuthStore.setState({
-        isLogin: true,
-        accessToken: String(accessToken),
-        refreshToken: String(refreshToken),
-      });
-      router.replace('/(tabs)');
-    };
-
     Linking.getInitialURL().then((url) => {
       if (url) {
-        handleLoginSuccessUrl(url);
+        handleKakaoLoginLink(url);
       }
     });
 
     const subscription = Linking.addEventListener('url', ({ url }) => {
-      handleLoginSuccessUrl(url);
+      handleKakaoLoginLink(url);
     });
 
     return () => subscription.remove();
-  }, []);
+  }, [handleKakaoLoginLink]);
 
   if (!loaded) {
     return null;

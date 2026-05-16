@@ -1,7 +1,8 @@
 "use client";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 interface IUserState {
   email: string;
@@ -40,6 +41,7 @@ export const useAuthStore = create<LoginState>(
     }),
     {
       name: "user-storage",
+      storage: createJSONStorage(() => AsyncStorage),
     },
   ) as (set: (fn: (state: LoginState) => LoginState) => void) => LoginState,
 );
