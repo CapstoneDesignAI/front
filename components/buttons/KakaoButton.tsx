@@ -1,4 +1,4 @@
-import getKakaoURL from "@/app/api/login/getKaKaoLogin";
+import getKakaoURL from "@/api/login/getKaKaoLogin";
 import { useQuery } from "@tanstack/react-query";
 import * as WebBrowser from "expo-web-browser";
 import React from "react";
