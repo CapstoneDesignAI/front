@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuthStore } from "@/store/login/useAuthStore";
+import { router } from "expo-router";
 
 interface IFetchOptions<T = unknown> {
   endpoint: string;
@@ -28,7 +29,7 @@ interface IDeleteOptions {
 
 const postRefresh = async (refreshToken: string) => {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_PROXY_URL}/users/token/refresh`,
+    `${process.env.EXPO_PUBLIC_API_BASE_URL}/users/token/refresh`,
     {
       method: "POST",
       headers: {
@@ -45,7 +46,7 @@ const postRefresh = async (refreshToken: string) => {
       accessToken: "",
       refreshToken: "",
     });
-    window.location.reload();
+    router.replace("/");
     // window.location.href = `${window.location.origin}/login`;
     throw new Error("Failed to refresh token");
   }
@@ -84,7 +85,7 @@ const _fetch = async <T = unknown, R = unknown>({
 
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_PROXY_URL}${endpoint}`,
+      `${process.env.EXPO_PUBLIC_API_BASE_URL}${endpoint}`,
       requestOptions,
     );
 
@@ -112,7 +113,7 @@ const _fetch = async <T = unknown, R = unknown>({
             //   }
             //   // 재요청
             //   const retryRes = await fetch(
-            //     `${process.env.NEXT_PUBLIC_PROXY_URL}${endpoint}`,
+            //     `${process.env.EXPO_PUBLIC_API_BASE_URL}${endpoint}`,
             //     retryRequestOptions,
             //   );
             //   if (!retryRes.ok) {
@@ -132,7 +133,7 @@ const _fetch = async <T = unknown, R = unknown>({
             accessToken: "",
             refreshToken: "",
           });
-          window.location.reload();
+          router.replace("/");
           throw new Error("Session expired. Please log in again.");
         }
       }

@@ -1,10 +1,21 @@
+import getKakaoURL from "@/app/api/login/getKaKaoLogin";
+import { useQuery } from "@tanstack/react-query";
+import * as WebBrowser from "expo-web-browser";
 import React from "react";
 import { Alert, Pressable, Text } from "react-native";
 
 const KakaoButton = () => {
-  const handlePressIn = () => {
-    // 카카오톡 로그인 로직을 여기에 구현하세요.
-    Alert.alert("카카오톡 로그인 버튼이 눌렸습니다.");
+  const { data: KAKAO_AUTH_URL } = useQuery({
+    queryKey: ["KAKAO_URL"],
+    queryFn: () => getKakaoURL(),
+  });
+
+  const handlePressIn = async () => {
+    if (KAKAO_AUTH_URL?.authorization_url) {
+      await WebBrowser.openBrowserAsync(KAKAO_AUTH_URL.authorization_url);
+    } else {
+      Alert.alert("카카오 로그인 URL을 불러오는 데 실패했습니다.");
+    }
   };
 
   return (
