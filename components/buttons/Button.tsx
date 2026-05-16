@@ -1,5 +1,6 @@
+import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Pressable, Text } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 interface Props {
   title: string;
@@ -14,10 +15,10 @@ export default function Button({ title, size, color }: Props) {
   const TEXT_SIZE = size === "large" ? "text-[17px]" : "text-[15px]";
 
   const BUTTON_COLOR = {
-    gradient: "bg-gradient-to-r from-main-01 via-[#FFAA69] to-[#FF6330] ",
+    gradient: "", // LinearGradient로 처리
     active: "bg-main-01",
     orange: "bg-main-02",
-    lightOrange: "bg-light-orange",
+    lightOrange: "bg-[#FFD4C6]", // theme의 main-03 혹은 lightOrange 값에 맞춰 수정 필요
     gray: "bg-gray-01",
     disabled: "bg-gray-02",
   }[color];
@@ -31,11 +32,26 @@ export default function Button({ title, size, color }: Props) {
     disabled: "text-gray-02",
   }[color];
 
-  return (
-    <Pressable
-      className={`mt-6 ${BUTTON_SIZE} ${BUTTON_COLOR} items-center justify-center rounded-[10px]`}
-    >
+  const content = (
+    <View className={`items-center justify-center w-full h-full`}>
       <Text className={`font-bold ${TEXT_SIZE} ${TEXT_COLOR}`}>{title}</Text>
+    </View>
+  );
+
+  return (
+    <Pressable className={`mt-6 ${BUTTON_SIZE} rounded-[10px] overflow-hidden`}>
+      {color === "gradient" ? (
+        <LinearGradient
+          colors={["#FF7548", "#FFAA69", "#FF6330"]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          className="w-full h-full"
+        >
+          {content}
+        </LinearGradient>
+      ) : (
+        <View className={`w-full h-full ${BUTTON_COLOR}`}>{content}</View>
+      )}
     </Pressable>
   );
 }

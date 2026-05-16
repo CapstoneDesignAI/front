@@ -1,5 +1,6 @@
 "use client";
-import { useAuthStore } from "@/app/login/store/useAuthStore";
+
+import { useAuthStore } from "@/store/login/useAuthStore";
 
 interface IFetchOptions<T = unknown> {
   endpoint: string;

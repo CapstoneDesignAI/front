@@ -1,6 +1,7 @@
+import Button from "@/components/buttons/Button";
 import KakaoButton from "@/components/buttons/KakaoButton";
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 export default function HomeScreen() {
   return (
@@ -14,9 +15,7 @@ export default function HomeScreen() {
             이 텍스트의 색상과 배경의 둥근 모서리가 보인다면 Tailwind가
             정상적으로 적용된 것입니다.
           </Text>
-          <Pressable className="mt-6 h-14 bg-main-01 items-center justify-center rounded-2xl">
-            <Text className="text-white font-bold text-[17px]">확인 완료</Text>
-          </Pressable>
+          <Button title="테스트 버튼" size="large" color="gradient" />
           <KakaoButton />
         </View>
       </View>
