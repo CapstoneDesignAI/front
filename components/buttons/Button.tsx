@@ -6,9 +6,10 @@ interface Props {
   title: string;
   size: "large" | "small";
   color: "gradient" | "active" | "orange" | "lightOrange" | "gray" | "disabled";
+  onPress: () => void;
 }
 
-export default function Button({ title, size, color }: Props) {
+export default function Button({ title, size, color, onPress }: Props) {
   const BUTTON_SIZE =
     size === "large" ? "w-[300px] h-[52px]" : "w-[147px] h-[46px]";
 
@@ -39,7 +40,10 @@ export default function Button({ title, size, color }: Props) {
   );
 
   return (
-    <Pressable className={`${BUTTON_SIZE} rounded-[10px] overflow-hidden`}>
+    <Pressable
+      className={`${BUTTON_SIZE} rounded-[10px] overflow-hidden`}
+      onPress={onPress}
+    >
       {color === "gradient" ? (
         <LinearGradient
           colors={["#FF7548", "#FFAA69", "#FF6330"]}
