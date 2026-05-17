@@ -18,7 +18,7 @@ export default function Button({ title, size, color }: Props) {
     gradient: "", // LinearGradient로 처리
     active: "bg-main-01",
     orange: "bg-main-02",
-    lightOrange: "bg-[#FFD4C6]", // theme의 main-03 혹은 lightOrange 값에 맞춰 수정 필요
+    lightOrange: "bg-main-05", // theme의 main-03 혹은 lightOrange 값에 맞춰 수정 필요
     gray: "bg-gray-01",
     disabled: "bg-gray-02",
   }[color];
@@ -29,7 +29,7 @@ export default function Button({ title, size, color }: Props) {
     orange: "text-gray-01",
     lightOrange: "text-gray-02",
     gray: "text-gray-01",
-    disabled: "text-gray-02",
+    disabled: "text-gray-01",
   }[color];
 
   const content = (
@@ -39,7 +39,7 @@ export default function Button({ title, size, color }: Props) {
   );
 
   return (
-    <Pressable className={`mt-6 ${BUTTON_SIZE} rounded-[10px] overflow-hidden`}>
+    <Pressable className={`${BUTTON_SIZE} rounded-[10px] overflow-hidden`}>
       {color === "gradient" ? (
         <LinearGradient
           colors={["#FF7548", "#FFAA69", "#FF6330"]}

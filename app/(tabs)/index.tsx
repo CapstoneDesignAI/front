@@ -1,5 +1,6 @@
 import Button from "@/components/buttons/Button";
 import KakaoButton from "@/components/buttons/KakaoButton";
+import ToggleButton from "@/components/buttons/ToggleButton";
 import { useAuthStore } from "@/store/login/useAuthStore";
 import React from "react";
 import { Text, View } from "react-native";
@@ -7,7 +8,8 @@ import { Text, View } from "react-native";
 export default function HomeScreen() {
   const { isLogin } = useAuthStore();
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 bg-background items-center">
+      <ToggleButton leftTitle="내 장소" rightTitle="내 동선" />
       <View className="flex-1 items-center justify-center p-6">
         <View className="w-full bg-white p-6 rounded-[32px] shadow-sm">
           <Text className="text-[24px] font-bold text-gray-01 mb-2">
