@@ -1,5 +1,6 @@
 import KakaoButton from "@/components/buttons/KakaoButton";
 import ToggleButton from "@/components/buttons/ToggleButton";
+import { ThemedView } from "@/components/themed-view";
 import { useAuthStore } from "@/store/login/useAuthStore";
 import React, { useState } from "react";
 import { Text, View } from "react-native";
@@ -16,16 +17,19 @@ export default function HomeScreen() {
   };
 
   return (
-    <View className="flex-1 bg-background items-center">
-      <ToggleButton
-        leftTitle="내 장소"
-        rightTitle="내 동선"
-        onLeftPress={handleLeftPress}
-        onRightPress={handleRightPress}
-        activeButton={activeButton}
-        setActiveButton={setActiveButton}
-      />
-      <View className="flex-1 items-center justify-center p-6">
+    <ThemedView className="flex-1 bg-background items-center">
+      <ThemedView className="flex-row w-full my-[20px] items-start justify-center">
+        <ToggleButton
+          leftTitle="장소 추천"
+          rightTitle="동선 추천"
+          onLeftPress={handleLeftPress}
+          onRightPress={handleRightPress}
+          activeButton={activeButton}
+          setActiveButton={setActiveButton}
+        />
+      </ThemedView>
+
+      <View className="flex items-center justify-center p-6">
         <View className="w-full bg-white p-6 rounded-[32px] shadow-sm">
           <Text className="text-[24px] font-bold text-gray-01 mb-2">
             Tailwind 작동 테스트
@@ -42,6 +46,6 @@ export default function HomeScreen() {
           <KakaoButton />
         </View>
       </View>
-    </View>
+    </ThemedView>
   );
 }
