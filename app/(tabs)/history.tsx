@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { ScrollView, StyleSheet } from "react-native";
 
 import ToggleButton from "@/components/buttons/ToggleButton";
 import { ThemedText } from "@/components/themed-text";
@@ -17,34 +17,48 @@ export default function HistoryScreen() {
     setActiveButton("right");
   };
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView className="flex-row w-full my-[20px] items-start justify-center">
-        <ToggleButton
-          leftTitle="내 장소"
-          rightTitle="내 동선"
-          onLeftPress={handleLeftPress}
-          onRightPress={handleRightPress}
-          activeButton={activeButton}
-          setActiveButton={setActiveButton}
-        />
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      <ThemedView style={styles.container}>
+        <ThemedView className="flex-row w-full my-[20px] items-start justify-center">
+          <ToggleButton
+            leftTitle="내 장소"
+            rightTitle="내 동선"
+            onLeftPress={handleLeftPress}
+            onRightPress={handleRightPress}
+            activeButton={activeButton}
+            setActiveButton={setActiveButton}
+          />
+        </ThemedView>
+        <ThemedView style={styles.titleContainer}>
+          <ThemedText type="title">History</ThemedText>
+          <ThemedText>저장된 활동과 이동 기록을 확인하는 화면입니다.</ThemedText>
+        </ThemedView>
+        <ThemedView style={styles.list}>
+          {records.map((record) => (
+            <ThemedView key={record} style={styles.item}>
+              <ThemedText type="defaultSemiBold">{record}</ThemedText>
+            </ThemedView>
+          ))}
+        </ThemedView>
       </ThemedView>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">History</ThemedText>
-        <ThemedText>저장된 활동과 이동 기록을 확인하는 화면입니다.</ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.list}>
-        {records.map((record) => (
-          <ThemedView key={record} style={styles.item}>
-            <ThemedText type="defaultSemiBold">{record}</ThemedText>
-          </ThemedView>
-        ))}
-      </ThemedView>
-    </ThemedView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 104,
+  },
   container: {
+    flex: 1,
     padding: 10,
   },
   titleContainer: {

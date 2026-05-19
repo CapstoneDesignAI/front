@@ -21,7 +21,7 @@ export default function Button({ title, size, color, onPress }: Props) {
     orange: "bg-main-02",
     lightOrange: "bg-main-05", // theme의 main-03 혹은 lightOrange 값에 맞춰 수정 필요
     gray: "bg-gray-01",
-    disabled: "bg-gray-02",
+    disabled: "bg-gray-04",
   }[color];
 
   const TEXT_COLOR = {
@@ -30,7 +30,7 @@ export default function Button({ title, size, color, onPress }: Props) {
     orange: "text-gray-01",
     lightOrange: "text-gray-02",
     gray: "text-gray-01",
-    disabled: "text-gray-01",
+    disabled: "text-gray-02",
   }[color];
 
   const content = (
