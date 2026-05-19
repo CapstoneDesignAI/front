@@ -2,7 +2,7 @@ import Button from "@/components/buttons/Button";
 import FilterButton from "@/components/buttons/FilterButton";
 import KakaoButton from "@/components/buttons/KakaoButton";
 import ToggleButton from "@/components/buttons/ToggleButton";
-import PlaceRecommendCard from "@/components/home/PlaceRecommendCard";
+import PlaceRecommendCard from "@/components/home/cards/PlaceRecommendCard";
 import TripContext from "@/components/home/TripContext";
 import { ThemedView } from "@/components/themed-view";
 import { useAuthStore } from "@/store/login/useAuthStore";
