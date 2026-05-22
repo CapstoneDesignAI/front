@@ -1,9 +1,28 @@
-import { ScrollView, StyleSheet } from 'react-native';
+import getUserProfile from "@/api/user/getUserProfile";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { useAuthStore } from "@/store/login/useAuthStore";
+import { useQuery } from "@tanstack/react-query";
+import { Image } from "expo-image";
+import { ScrollView, StyleSheet } from "react-native";
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+const DEFAULT_PROFILE_IMAGE = require("@/assets/images/icon.png");
 
 export default function MyScreen() {
+  const accessToken = useAuthStore((state) => state.accessToken);
+
+  const { data: userProfile, isLoading } = useQuery({
+    queryKey: ["USER_PROFILE", accessToken],
+    queryFn: () => getUserProfile(accessToken),
+    enabled: Boolean(accessToken),
+    retry: false,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const nickname = isLoading
+    ? "불러오는 중..."
+    : userProfile?.nickName ?? "로그인이 필요합니다.";
+
   return (
     <ScrollView
       style={styles.scroll}
@@ -11,13 +30,17 @@ export default function MyScreen() {
       showsVerticalScrollIndicator={false}
     >
       <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="title">My</ThemedText>
-          <ThemedText>프로필과 앱 설정을 관리하는 화면입니다.</ThemedText>
-        </ThemedView>
-        <ThemedView style={styles.profileBox}>
-          <ThemedText type="subtitle">내 정보</ThemedText>
-          <ThemedText>로그인 정보와 개인 설정이 이곳에 표시됩니다.</ThemedText>
+        <ThemedView style={styles.profileSection}>
+          <Image
+            source={
+              userProfile?.profile_img
+                ? { uri: userProfile.profile_img }
+                : DEFAULT_PROFILE_IMAGE
+            }
+            style={styles.profileImage}
+            contentFit="cover"
+          />
+          <ThemedText type="subtitle">{nickname}</ThemedText>
         </ThemedView>
       </ThemedView>
     </ScrollView>
@@ -34,18 +57,16 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    gap: 24,
     padding: 24,
-    paddingTop: 72,
   },
-  titleContainer: {
-    gap: 8,
+  profileSection: {
+    alignItems: "center",
+    gap: 16,
+    paddingTop: 48,
   },
-  profileBox: {
-    borderColor: '#D0D7DE',
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 8,
-    padding: 16,
+  profileImage: {
+    borderRadius: 75,
+    height: 150,
+    width: 150,
   },
 });

@@ -1,8 +1,5 @@
-import Button from "@/components/buttons/Button";
-import FilterButton from "@/components/buttons/FilterButton";
 import KakaoButton from "@/components/buttons/KakaoButton";
 import ToggleButton from "@/components/buttons/ToggleButton";
-import PlaceRecommendCard from "@/components/home/cards/PlaceRecommendCard";
 import TripContext from "@/components/home/TripContext";
 import { ThemedView } from "@/components/themed-view";
 import { useAuthStore } from "@/store/login/useAuthStore";
@@ -47,8 +44,6 @@ export default function HomeScreen() {
           isOpen={isTripContextOpen}
           onToggle={() => setIsTripContextOpen((prev) => !prev)}
         />
-
-        <PlaceRecommendCard />
 
         <View className="flex items-center justify-center p-6">
           <View className="w-full bg-white p-6 rounded-[32px] shadow-sm">

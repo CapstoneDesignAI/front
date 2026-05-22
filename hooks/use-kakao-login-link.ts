@@ -3,11 +3,21 @@ import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { useCallback } from "react";
 
+type ServiceTokenPayload = {
+  iss?: string;
+  sub?: string;
+  type?: string;
+};
+
 export function useKakaoLoginLink() {
   return useCallback((url: string) => {
-    const parsed = Linking.parse(url);
+    console.log("login redirect url:", url);
 
-    if (parsed.path !== "login/success") {
+    const parsed = Linking.parse(url);
+    console.log("login redirect parsed:", parsed);
+
+    if (!parsed.path?.endsWith("login/success")) {
+      console.log("ignored login redirect path:", parsed.path);
       return false;
     }
 
@@ -21,6 +31,20 @@ export function useKakaoLoginLink() {
       : refreshTokenParam;
 
     if (!accessToken || !refreshToken) {
+      console.log("missing login tokens:", parsed.queryParams);
+      return false;
+    }
+
+    const accessTokenPayload = decodeJwtPayload(String(accessToken));
+    console.log("accessToken payload:", accessTokenPayload);
+
+    if (
+      !accessTokenPayload ||
+      accessTokenPayload.iss !== "capstoneai" ||
+      accessTokenPayload.type !== "access" ||
+      !accessTokenPayload.sub
+    ) {
+      console.log("ignored non-service access token");
       return false;
     }
 
@@ -33,4 +57,22 @@ export function useKakaoLoginLink() {
 
     return true;
   }, []);
+}
+
+function decodeJwtPayload(token: string): ServiceTokenPayload | null {
+  const [, payload] = token.split(".");
+
+  if (!payload) {
+    return null;
+  }
+
+  try {
+    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const paddedPayload =
+      normalizedPayload + "=".repeat((4 - (normalizedPayload.length % 4)) % 4);
+
+    return JSON.parse(globalThis.atob(paddedPayload)) as ServiceTokenPayload;
+  } catch {
+    return null;
+  }
 }
