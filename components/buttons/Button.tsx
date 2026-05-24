@@ -46,7 +46,7 @@ export default function Button({ title, size, color, onPress }: Props) {
     >
       {color === "gradient" ? (
         <LinearGradient
-          colors={["#FF7548", "#FFAA69", "#FF6330"]}
+          colors={["#F29B7F", "#A8B89A", "#7D9AAE"]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           className="w-full h-full"

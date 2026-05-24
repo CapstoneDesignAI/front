@@ -14,14 +14,14 @@ export default function FavoriteFolderItem({
 }: FavoriteFolderItemProps) {
   return (
     <Pressable
-      className="flex-row items-center gap-3 rounded-2xl border border-[#F0F0F0] p-[14px]"
+      className="flex-row items-center gap-3 rounded-2xl border border-gray-04 bg-background p-[14px]"
       onPress={() => onPress(folder.id)}
     >
-      <View className="h-11 w-11 items-center justify-center rounded-full bg-main-05">
+      <View className="h-11 w-11 items-center justify-center rounded-full bg-main-04">
         <MaterialCommunityIcons
           name="folder-heart"
           size={22}
-          color="#FF7548"
+          color="#F29B7F"
         />
       </View>
       <View className="flex-1 gap-1">
@@ -43,7 +43,7 @@ export default function FavoriteFolderItem({
       <MaterialCommunityIcons
         name="chevron-right"
         size={22}
-        color="#A7A5A4"
+        color="#7D9AAE"
       />
     </Pressable>
   );

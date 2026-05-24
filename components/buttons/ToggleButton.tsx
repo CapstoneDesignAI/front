@@ -21,7 +21,7 @@ export default function ToggleButton({
 }: Props) {
   return (
     <View
-      className={`w-[300px] h-[52px] p-[3px] rounded-[10px] bg-main-04 flex-row items-center justify-between`}
+      className={`w-[300px] h-[52px] p-[3px] rounded-[10px] bg-main-04 flex-row items-center justify-between border border-gray-04`}
     >
       <Button
         title={leftTitle}

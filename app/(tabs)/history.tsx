@@ -20,6 +20,7 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
+    backgroundColor: "#FFF8F3",
   },
   scrollContent: {
     flexGrow: 1,
@@ -28,6 +29,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
+    backgroundColor: "#FFF8F3",
   },
   titleContainer: {
     gap: 8,
@@ -36,7 +38,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   item: {
-    borderColor: "#D0D7DE",
+    borderColor: "#E8DDD5",
     borderRadius: 8,
     borderWidth: 1,
     padding: 16,

@@ -57,6 +57,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard',
     fontSize: 16,
     lineHeight: 30,
-    color: '#0a7ea4',
+    color: '#7D9AAE',
   },
 });

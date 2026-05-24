@@ -6,11 +6,6 @@ import { useAuthStore } from "@/store/login/useAuthStore";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-const activity_style = ["휴식 중심", "액티비티 중심", "맛집 중심", "관광 중심"];
-const allergies = ["견과류", "갑각류", "유제품", "기타(직접입력"];
-const pref_mood = ["조용한", "감성적인", "활기찬", "로컬 느낌", "힙한 분위기"];
-const pref_transport = ["많이 걷기 가능", "대중교통 선호", "이동 최소화 선호"];
-
 export default function HomeScreen() {
   const { isLogin } = useAuthStore();
   const [activeButton, setActiveButton] = useState<"left" | "right">("left"); // 예시로 왼쪽 버튼이 활성화된 상태로 설정
@@ -30,7 +25,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <ThemedView className="flex-row w-full my-[20px] items-start justify-center">
+        <ThemedView className="flex-row w-full my-[20px] items-start justify-center bg-background">
           <ToggleButton
             leftTitle="장소 추천"
             rightTitle="동선 추천"
@@ -46,11 +41,11 @@ export default function HomeScreen() {
         />
 
         <View className="flex items-center justify-center p-6">
-          <View className="w-full bg-white p-6 rounded-[32px] shadow-sm">
+          <View className="w-full bg-main-05 p-6 rounded-[24px] border border-gray-04 shadow-sm">
             {isLogin ? (
-              <Text className="text-green-500 mt-4">로그인 상태입니다.</Text>
+              <Text className="text-main-02 mt-4 font-bold">로그인 상태입니다.</Text>
             ) : (
-              <Text className="text-red-500 mt-4">로그아웃 상태입니다.</Text>
+              <Text className="text-main-03 mt-4 font-bold">로그아웃 상태입니다.</Text>
             )}
             <KakaoButton />
           </View>

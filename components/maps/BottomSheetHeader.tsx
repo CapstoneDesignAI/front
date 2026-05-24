@@ -30,7 +30,7 @@ export default function BottomSheetHeader({
             <MaterialCommunityIcons
               name="chevron-left"
               size={20}
-              color="#5A5857"
+              color="#7D9AAE"
             />
             <Text className="text-sm font-bold text-gray-02">폴더 목록</Text>
           </Pressable>
@@ -46,13 +46,13 @@ export default function BottomSheetHeader({
       </View>
       <Pressable
         accessibilityRole="button"
-        className="h-9 w-9 items-center justify-center rounded-full bg-background"
+        className="h-9 w-9 items-center justify-center rounded-full bg-main-04"
         onPress={onToggle}
       >
         <MaterialCommunityIcons
           name={isExpanded ? "chevron-down" : "chevron-up"}
           size={24}
-          color="#5A5857"
+          color="#3A3A3A"
         />
       </Pressable>
     </View>

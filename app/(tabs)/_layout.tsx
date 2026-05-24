@@ -19,6 +19,8 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
         tabBarStyle: {
           borderRadius: 20,
+          borderColor: Colors[colorScheme ?? "light"].gray04,
+          backgroundColor: Colors[colorScheme ?? "light"].main05,
           height: 80,
           elevation: 5,
           shadowOpacity: 0.1, // iOS 그림자

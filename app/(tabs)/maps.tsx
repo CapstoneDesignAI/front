@@ -14,7 +14,7 @@ const kakaoMapWebUrl =
 export default function MapsScreen() {
   return (
     <ThemedView className="flex-1 bg-background">
-      <View className="relative flex-1 overflow-hidden bg-white">
+      <View className="relative flex-1 overflow-hidden bg-background">
         <WebView
           source={{ uri: kakaoMapWebUrl }}
           className="flex-1"

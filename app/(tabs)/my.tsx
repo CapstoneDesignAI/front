@@ -50,6 +50,7 @@ export default function MyScreen() {
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
+    backgroundColor: "#FFF8F3",
   },
   scrollContent: {
     flexGrow: 1,
@@ -58,13 +59,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
+    backgroundColor: "#FFF8F3",
   },
   profileSection: {
     alignItems: "center",
     gap: 16,
     paddingTop: 48,
+    backgroundColor: "#FFF8F3",
   },
   profileImage: {
+    borderColor: "#F29B7F",
+    borderWidth: 3,
     borderRadius: 75,
     height: 150,
     width: 150,
