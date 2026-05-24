@@ -9,9 +9,9 @@ interface Props {
 export default function Tag({ title, isActivated }: Props) {
   return (
     <View
-      className={`items-center p-[5px] h-fit w-fit rounded-[5px] border ${isActivated ? "bg-main-03 border-main-01" : "bg-gray-04 border-gray-04"}`}
+      className={`items-center p-[5px] h-fit w-fit rounded-[8px] border ${isActivated ? "bg-main-light-orange border-main-green" : "bg-background border-gray-04"}`}
     >
-      <Text className="text-[12px] text-gray-02">{title}</Text>
+      <Text className={`text-[12px] ${isActivated ? "font-bold text-gray-01" : "text-gray-02"}`}>{title}</Text>
     </View>
   );
 }

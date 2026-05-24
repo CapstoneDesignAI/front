@@ -78,6 +78,15 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen
+            name="custom-trip"
+            options={{
+              title: "커스텀 여행지 추천",
+              headerStyle: { backgroundColor: "#FFF8F3" },
+              headerTintColor: "#3A3A3A",
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
             name="modal"
             options={{ presentation: "modal", title: "Modal" }}
           />

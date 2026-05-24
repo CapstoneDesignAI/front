@@ -95,14 +95,14 @@ export default function BottomSheet() {
 
   return (
     <Animated.View
-      className="absolute bottom-0 left-0 right-0 rounded-t-[24px] bg-white pb-[18px] shadow-xl"
+      className="absolute bottom-0 left-0 right-0 rounded-t-[24px] bg-background pb-[18px] shadow-xl border border-gray-04"
       style={{ height: sheetHeight }}
     >
       <View
         {...panResponder.panHandlers}
         className="items-center pb-2 pt-[10px]"
       >
-        <View className="h-1 w-[42px] rounded-full bg-gray-04" />
+        <View className="h-1 w-[42px] rounded-full bg-main-green" />
       </View>
       <BottomSheetHeader
         folderCount={favoriteFolders.length}

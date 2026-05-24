@@ -15,10 +15,10 @@ interface Props {
 export default function TripContext({ isOpen, onToggle }: Props) {
   return (
     <View
-      className={`flex px-[15px] pt-[12px] pb-[6px] w-[360px] ${isOpen ? "h-[400px]" : "h-[62px]"} bg-white shadow-sm rounded-[20px]`}
+      className={`flex px-[15px] pt-[12px] pb-[6px] w-[360px] ${isOpen ? "h-[400px]" : "h-[62px]"} bg-background shadow-sm rounded-[24px] border border-gray-04`}
     >
       <View className="flex-1 gap-[20px]">
-        <Text className="text-gray-03 text-[15px]">이번 여행은 어떤가요?</Text>
+        <Text className="text-gray-01 text-[17px] font-bold">이번 여행은 어떤가요?</Text>
         {isOpen && (
           <View className="gap-[10px]">
             <View className="gap-[10px]">
@@ -73,7 +73,7 @@ export default function TripContext({ isOpen, onToggle }: Props) {
         <MaterialCommunityIcons
           name="chevron-down"
           size={24}
-          color="#A7A5A4"
+          color="#7D9AAE"
           style={{ transform: [{ rotate: isOpen ? "180deg" : "0deg" }] }}
         />
       </Pressable>

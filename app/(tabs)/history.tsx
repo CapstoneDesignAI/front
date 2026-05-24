@@ -1,44 +1,38 @@
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView, View } from "react-native";
 
+import ToggleButton from "@/components/buttons/ToggleButton";
 import RouteRecommendCard from "@/components/cards/RouteRecommendCard";
-import { ThemedView } from "@/components/themed-view";
+import { useState } from "react";
 
 export default function HistoryScreen() {
+  const [activeButton, setActiveButton] = useState<"left" | "right">("left"); // 예시로 왼쪽 버튼이 활성화된 상태로 설정
+
+  const handleLeftPress = () => {
+    setActiveButton("left");
+  };
+  const handleRightPress = () => {
+    setActiveButton("right");
+  };
+
   return (
     <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.scrollContent}
+      className="flex-1 bg-background"
+      contentContainerClassName="grow pb-[104px]"
       showsVerticalScrollIndicator={false}
     >
-      <ThemedView style={styles.container}>
+      <View className="flex-1 bg-background p-[10px]">
+        <View className="flex-row w-full my-[20px] items-start justify-center bg-background">
+          <ToggleButton
+            leftTitle="내 동선"
+            rightTitle="이전 기록"
+            onLeftPress={handleLeftPress}
+            onRightPress={handleRightPress}
+            activeButton={activeButton}
+            setActiveButton={setActiveButton}
+          />
+        </View>
         <RouteRecommendCard />
-      </ThemedView>
+      </View>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 104,
-  },
-  container: {
-    flex: 1,
-    padding: 10,
-  },
-  titleContainer: {
-    gap: 8,
-  },
-  list: {
-    gap: 12,
-  },
-  item: {
-    borderColor: "#D0D7DE",
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 16,
-  },
-});

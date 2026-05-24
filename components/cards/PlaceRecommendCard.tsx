@@ -7,7 +7,7 @@ import Tag from "@/components/cards/Tag";
 
 export default function PlaceRecommendCard() {
   return (
-    <View className="bg-white shadow-sm rounded-[20px] w-[360px] h-fit p-[20px] gap-[12px] items-center">
+    <View className="bg-background shadow-sm rounded-[24px] w-[360px] h-fit p-[20px] gap-[12px] items-center border border-gray-04">
       <Image
         source={require("@/assets/images/example_place.png")}
         className="w-[320px] h-[165px] rounded-[10px]"
@@ -18,7 +18,7 @@ export default function PlaceRecommendCard() {
           모토모토 MotoMoto
         </Text>
         <View className="flex-row items-center gap-[4px]">
-          <MaterialCommunityIcons name="map-marker" size={20} color="#FF7548" />
+          <MaterialCommunityIcons name="map-marker" size={20} color="#F29B7F" />
           <Text className="text-gray-01 text-[20px]">200m</Text>
           <View className="flex-row gap-2">
             <Tag title="감성" isActivated={true} />
@@ -29,7 +29,7 @@ export default function PlaceRecommendCard() {
           <Text className="text-gray-01 text-[15px]">
             이 장소를 방문한 사람
           </Text>
-          <MaterialCommunityIcons name="thumb-up" size={15} color="#FF7548" />
+          <MaterialCommunityIcons name="thumb-up" size={15} color="#A8B89A" />
           <Text className="text-gray-02 text-[15px]">20/30</Text>
         </View>
         <Text className="text-gray-02 text-[12px]">춘천 3층짜리 대형 카페</Text>
@@ -46,7 +46,7 @@ export default function PlaceRecommendCard() {
         <MaterialCommunityIcons
           name="bookmark-outline"
           size={30}
-          color="#A7A5A4"
+          color="#7D9AAE"
         />
       </View>
     </View>

@@ -1,14 +1,24 @@
-import { StyleSheet, Text, type TextProps } from 'react-native';
+import { Text, type TextProps } from 'react-native';
 
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 export type ThemedTextProps = TextProps & {
+  className?: string;
   lightColor?: string;
   darkColor?: string;
   type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
 };
 
+const typeClassName = {
+  default: 'font-[Pretendard] text-base leading-6',
+  defaultSemiBold: 'font-[PretendardSemiBold] text-base leading-6',
+  title: 'font-[PretendardBold] text-[32px] leading-8',
+  subtitle: 'font-[PretendardBold] text-xl',
+  link: 'font-[Pretendard] text-base leading-[30px]',
+};
+
 export function ThemedText({
+  className,
   style,
   lightColor,
   darkColor,
@@ -16,47 +26,13 @@ export function ThemedText({
   ...rest
 }: ThemedTextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const textColor = type === 'link' ? '#7D9AAE' : color;
 
   return (
     <Text
-      style={[
-        { color },
-        type === 'default' ? styles.default : undefined,
-        type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
-        type === 'subtitle' ? styles.subtitle : undefined,
-        type === 'link' ? styles.link : undefined,
-        style,
-      ]}
+      className={`${typeClassName[type]} ${className ?? ''}`}
+      style={[{ color: textColor }, style]}
       {...rest}
     />
   );
 }
-
-const styles = StyleSheet.create({
-  default: {
-    fontFamily: 'Pretendard',
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  defaultSemiBold: {
-    fontFamily: 'PretendardSemiBold',
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  title: {
-    fontFamily: 'PretendardBold',
-    fontSize: 32,
-    lineHeight: 32,
-  },
-  subtitle: {
-    fontFamily: 'PretendardBold',
-    fontSize: 20,
-  },
-  link: {
-    fontFamily: 'Pretendard',
-    fontSize: 16,
-    lineHeight: 30,
-    color: '#0a7ea4',
-  },
-});

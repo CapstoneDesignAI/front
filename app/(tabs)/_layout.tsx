@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import React from "react";
 
 import { HapticTab } from "@/components/haptic-tab";
-import header from "@/components/header";
+import Header from "@/components/header";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -15,10 +15,12 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: true,
-        header: header,
+        header: () => <Header />,
         tabBarButton: HapticTab,
         tabBarStyle: {
           borderRadius: 20,
+          borderColor: Colors[colorScheme ?? "light"].gray04,
+          backgroundColor: Colors[colorScheme ?? "light"].main05,
           height: 80,
           elevation: 5,
           shadowOpacity: 0.1, // iOS 그림자

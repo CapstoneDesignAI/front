@@ -6,18 +6,18 @@
 import { Platform } from "react-native";
 
 const Palette = {
-  main01: "#FF7548",
-  main02: "#FF9F80",
-  main03: "#FFD4C6",
-  main04: "#FFEAE4",
-  main05: "#FFF1ED",
+  main01: "#A8B89A",
+  main02: "#F29B7F",
+  main03: "#7D9AAE",
+  main04: "#F6E6DC",
+  main05: "#FFF8F3",
 
-  gray01: "#0D0D0D",
-  gray02: "#5A5857",
-  gray03: "#A7A5A4",
-  gray04: "#D6D6D6",
+  gray01: "#3A3A3A",
+  gray02: "#6F6762",
+  gray03: "#A59A93",
+  gray04: "#E8DDD5",
 
-  background: "#F2F4F6",
+  background: "#FFF8F3",
 };
 
 export const Colors = {
@@ -32,8 +32,8 @@ export const Colors = {
   },
   dark: {
     ...Palette,
-    text: "#ECEDEE",
-    background: "#151718",
+    text: Palette.main05,
+    background: "#3A3A3A",
     tint: Palette.main01,
     icon: Palette.gray03,
     tabIconDefault: Palette.gray04,
