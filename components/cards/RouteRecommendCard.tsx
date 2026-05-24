@@ -28,7 +28,7 @@ const routeStops = [
 
 export default function RouteRecommendCard() {
   return (
-    <View className="h-fit w-[360px] items-center gap-[14px] rounded-[24px] bg-main-05 p-[20px] shadow-sm border border-gray-04">
+    <View className="h-fit w-[360px] items-center gap-[14px] rounded-[24px] bg-background p-[20px] shadow-sm border border-gray-04">
       <View className="w-full gap-[8px]">
         <View className="flex-row items-center justify-between">
           <Text className="text-[24px] font-bold text-gray-01">
@@ -54,19 +54,19 @@ export default function RouteRecommendCard() {
         </Text>
       </View>
 
-      <View className="w-full gap-[10px] rounded-[14px] bg-main-04 p-[14px]">
+      <View className="w-full gap-[10px] rounded-[14px] bg-main-light-orange p-[14px]">
         {routeStops.map((stop, index) => {
           const isLast = index === routeStops.length - 1;
 
           return (
             <View key={stop.id} className="flex-row gap-[10px]">
               <View className="items-center">
-                <View className="h-[24px] w-[24px] items-center justify-center rounded-full bg-main-03">
+                <View className="h-[24px] w-[24px] items-center justify-center rounded-full bg-main-green">
                   <Text className="text-[12px] font-bold text-white">
                     {index + 1}
                   </Text>
                 </View>
-                {!isLast ? <View className="h-[34px] w-[2px] bg-main-02" /> : null}
+                {!isLast ? <View className="h-[34px] w-[2px] bg-main-green" /> : null}
               </View>
               <View className="flex-1 pb-[8px]">
                 <View className="flex-row items-center justify-between">
@@ -76,7 +76,7 @@ export default function RouteRecommendCard() {
                   >
                     {stop.name}
                   </Text>
-                  <Text className="ml-2 text-[12px] font-bold text-main-01">
+                  <Text className="ml-2 text-[12px] font-bold text-main-green">
                     {stop.duration}
                   </Text>
                 </View>

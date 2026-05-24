@@ -15,7 +15,7 @@ interface Props {
 export default function TripContext({ isOpen, onToggle }: Props) {
   return (
     <View
-      className={`flex px-[15px] pt-[12px] pb-[6px] w-[360px] ${isOpen ? "h-[400px]" : "h-[62px]"} bg-main-05 shadow-sm rounded-[24px] border border-gray-04`}
+      className={`flex px-[15px] pt-[12px] pb-[6px] w-[360px] ${isOpen ? "h-[400px]" : "h-[62px]"} bg-background shadow-sm rounded-[24px] border border-gray-04`}
     >
       <View className="flex-1 gap-[20px]">
         <Text className="text-gray-01 text-[17px] font-bold">이번 여행은 어떤가요?</Text>

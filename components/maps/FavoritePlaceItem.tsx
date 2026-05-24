@@ -10,7 +10,7 @@ type FavoritePlaceItemProps = {
 export default function FavoritePlaceItem({ place }: FavoritePlaceItemProps) {
   return (
     <Pressable className="flex-row gap-3 rounded-2xl border border-gray-04 bg-background p-[14px]">
-      <View className="h-10 w-10 items-center justify-center rounded-full bg-main-04">
+      <View className="h-10 w-10 items-center justify-center rounded-full bg-main-light-orange">
         <MaterialCommunityIcons name="map-marker" size={20} color="#F29B7F" />
       </View>
       <View className="flex-1 gap-1.5">
@@ -21,7 +21,7 @@ export default function FavoritePlaceItem({ place }: FavoritePlaceItemProps) {
           >
             {place.name}
           </Text>
-          <Text className="ml-2 text-sm font-bold text-main-01">
+          <Text className="ml-2 text-sm font-bold text-main-green">
             {place.distance}
           </Text>
         </View>
@@ -32,7 +32,7 @@ export default function FavoritePlaceItem({ place }: FavoritePlaceItemProps) {
           {place.tags.map((tag) => (
             <Text
               key={tag}
-              className="rounded-full bg-main-04 px-2 py-1 text-xs font-bold text-gray-01"
+              className="rounded-full bg-main-light-orange px-2 py-1 text-xs font-bold text-gray-01"
             >
               {tag}
             </Text>

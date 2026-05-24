@@ -17,7 +17,7 @@ export default function FavoriteFolderItem({
       className="flex-row items-center gap-3 rounded-2xl border border-gray-04 bg-background p-[14px]"
       onPress={() => onPress(folder.id)}
     >
-      <View className="h-11 w-11 items-center justify-center rounded-full bg-main-04">
+      <View className="h-11 w-11 items-center justify-center rounded-full bg-main-light-orange">
         <MaterialCommunityIcons
           name="folder-heart"
           size={22}
@@ -32,7 +32,7 @@ export default function FavoriteFolderItem({
           >
             {folder.name}
           </Text>
-          <Text className="ml-2 text-sm font-bold text-main-01">
+          <Text className="ml-2 text-sm font-bold text-main-green">
             {folder.places.length}
           </Text>
         </View>

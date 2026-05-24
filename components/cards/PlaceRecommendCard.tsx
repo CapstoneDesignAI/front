@@ -7,7 +7,7 @@ import Tag from "@/components/cards/Tag";
 
 export default function PlaceRecommendCard() {
   return (
-    <View className="bg-main-05 shadow-sm rounded-[24px] w-[360px] h-fit p-[20px] gap-[12px] items-center border border-gray-04">
+    <View className="bg-background shadow-sm rounded-[24px] w-[360px] h-fit p-[20px] gap-[12px] items-center border border-gray-04">
       <Image
         source={require("@/assets/images/example_place.png")}
         className="w-[320px] h-[165px] rounded-[10px]"

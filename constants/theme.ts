@@ -6,8 +6,8 @@
 import { Platform } from "react-native";
 
 const Palette = {
-  main01: "#F29B7F",
-  main02: "#A8B89A",
+  main01: "#A8B89A",
+  main02: "#F29B7F",
   main03: "#7D9AAE",
   main04: "#F6E6DC",
   main05: "#FFF8F3",

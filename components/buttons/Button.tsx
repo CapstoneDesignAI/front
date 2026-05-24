@@ -17,9 +17,9 @@ export default function Button({ title, size, color, onPress }: Props) {
 
   const BUTTON_COLOR = {
     gradient: "", // LinearGradient로 처리
-    active: "bg-main-01",
-    orange: "bg-main-02",
-    lightOrange: "bg-main-05", // theme의 main-03 혹은 lightOrange 값에 맞춰 수정 필요
+    active: "bg-main-green",
+    orange: "bg-main-orange",
+    lightOrange: "bg-main-light-orange",
     gray: "bg-gray-01",
     disabled: "bg-gray-04",
   }[color];

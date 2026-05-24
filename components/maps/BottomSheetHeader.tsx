@@ -46,7 +46,7 @@ export default function BottomSheetHeader({
       </View>
       <Pressable
         accessibilityRole="button"
-        className="h-9 w-9 items-center justify-center rounded-full bg-main-04"
+        className="h-9 w-9 items-center justify-center rounded-full bg-main-light-orange"
         onPress={onToggle}
       >
         <MaterialCommunityIcons
