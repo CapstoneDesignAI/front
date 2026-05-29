@@ -17,8 +17,6 @@ export default function FavoriteFolderList({
     <FavoriteFolderItem
       key={folder.folder_id}
       folder={folder}
-      onDeletePress={onDeleteFolder}
-      onEditPress={onEditFolder}
       onPress={onFolderPress}
     />
   ));

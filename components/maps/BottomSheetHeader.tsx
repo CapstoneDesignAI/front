@@ -8,6 +8,8 @@ type BottomSheetHeaderProps = {
   onCreateFolder: () => void;
   onToggle: () => void;
   selectedFolder?: IFolderItem;
+  onDeletePress?: (folder: IFolderItem) => void;
+  onEditPress?: (folder: IFolderItem) => void;
 };
 
 export default function BottomSheetHeader({
@@ -17,6 +19,8 @@ export default function BottomSheetHeader({
   onCreateFolder,
   onToggle,
   selectedFolder,
+  onDeletePress,
+  onEditPress,
 }: BottomSheetHeaderProps) {
   return (
     <View className="flex-row items-center justify-between px-5 pb-3">
@@ -55,18 +59,49 @@ export default function BottomSheetHeader({
           >
             <MaterialCommunityIcons name="plus" size={22} color="#3A3A3A" />
           </Pressable>
+        ) : !selectedFolder.is_default ? (
+          <View className="flex-row items-center">
+            <Pressable
+              accessibilityRole="button"
+              className="h-9 w-9 items-center justify-center"
+              onPress={(event) => {
+                event.stopPropagation();
+                onEditPress?.(selectedFolder);
+              }}
+            >
+              <MaterialCommunityIcons
+                name="pencil-outline"
+                size={20}
+                color="#7D9AAE"
+              />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              className="h-9 w-9 items-center justify-center"
+              onPress={(event) => {
+                event.stopPropagation();
+                onDeletePress?.(selectedFolder);
+              }}
+            >
+              <MaterialCommunityIcons
+                name="trash-can-outline"
+                size={20}
+                color="#F29B7F"
+              />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              className="h-9 w-9 items-center justify-center rounded-full bg-main-light-orange"
+              onPress={onToggle}
+            >
+              <MaterialCommunityIcons
+                name={isExpanded ? "chevron-down" : "chevron-up"}
+                size={24}
+                color="#3A3A3A"
+              />
+            </Pressable>
+          </View>
         ) : null}
-        <Pressable
-          accessibilityRole="button"
-          className="h-9 w-9 items-center justify-center rounded-full bg-main-light-orange"
-          onPress={onToggle}
-        >
-          <MaterialCommunityIcons
-            name={isExpanded ? "chevron-down" : "chevron-up"}
-            size={24}
-            color="#3A3A3A"
-          />
-        </Pressable>
       </View>
     </View>
   );

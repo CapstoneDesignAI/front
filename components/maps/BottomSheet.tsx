@@ -249,6 +249,8 @@ export default function BottomSheet() {
         onBackToFolders={() => setSelectedFolderId(null)}
         onCreateFolder={handleCreateFolder}
         onToggle={toggleSheet}
+        onDeletePress={handleDeleteFolder}
+        onEditPress={handleEditFolder}
       />
       <ScrollView
         className="flex-1"
