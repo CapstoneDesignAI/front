@@ -2,7 +2,7 @@ import type { FavoriteFolder } from "./types";
 
 export const favoriteFolders: FavoriteFolder[] = [
   {
-    id: 1,
+    id: "1",
     name: "춘천 카페",
     description: "커피 마시기 좋은 장소",
     places: [
@@ -23,7 +23,7 @@ export const favoriteFolders: FavoriteFolder[] = [
     ],
   },
   {
-    id: 2,
+    id: "2",
     name: "산책 코스",
     description: "가볍게 걷기 좋은 장소",
     places: [
@@ -44,7 +44,7 @@ export const favoriteFolders: FavoriteFolder[] = [
     ],
   },
   {
-    id: 3,
+    id: "3",
     name: "로컬 맛집",
     description: "현지 분위기의 식당 모음",
     places: [

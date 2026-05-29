@@ -7,6 +7,7 @@ type BottomSheetHeaderProps = {
   folderCount: number;
   isExpanded: boolean;
   onBackToFolders: () => void;
+  onCreateFolder: () => void;
   onToggle: () => void;
   selectedFolder?: FavoriteFolder;
 };
@@ -15,6 +16,7 @@ export default function BottomSheetHeader({
   folderCount,
   isExpanded,
   onBackToFolders,
+  onCreateFolder,
   onToggle,
   selectedFolder,
 }: BottomSheetHeaderProps) {
@@ -46,17 +48,28 @@ export default function BottomSheetHeader({
             : `${folderCount}개의 폴더`}
         </Text>
       </View>
-      <Pressable
-        accessibilityRole="button"
-        className="h-9 w-9 items-center justify-center rounded-full bg-main-light-orange"
-        onPress={onToggle}
-      >
-        <MaterialCommunityIcons
-          name={isExpanded ? "chevron-down" : "chevron-up"}
-          size={24}
-          color="#3A3A3A"
-        />
-      </Pressable>
+      <View className="flex-row items-center gap-2">
+        {!selectedFolder ? (
+          <Pressable
+            accessibilityRole="button"
+            className="h-9 w-9 items-center justify-center rounded-full bg-main-light-orange"
+            onPress={onCreateFolder}
+          >
+            <MaterialCommunityIcons name="plus" size={22} color="#3A3A3A" />
+          </Pressable>
+        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          className="h-9 w-9 items-center justify-center rounded-full bg-main-light-orange"
+          onPress={onToggle}
+        >
+          <MaterialCommunityIcons
+            name={isExpanded ? "chevron-down" : "chevron-up"}
+            size={24}
+            color="#3A3A3A"
+          />
+        </Pressable>
+      </View>
     </View>
   );
 }

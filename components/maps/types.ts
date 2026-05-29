@@ -7,8 +7,10 @@ export type FavoritePlace = {
 };
 
 export type FavoriteFolder = {
-  id: number;
+  id: string;
   name: string;
   description: string;
+  isDefault?: boolean;
+  bookmarkCount?: number;
   places: FavoritePlace[];
 };

@@ -11,6 +11,11 @@ type IPostFolderItemRequest = {
   name: string;
 };
 
+type IFolderMutationResponse = {
+  message: string;
+  folder_id?: string;
+};
+
 type IPostBookmarkPlace = {
   place_id: string;
   folder_id: string;
