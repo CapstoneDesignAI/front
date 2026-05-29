@@ -2,8 +2,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import { Image, Text, View } from "react-native";
 
-import Button from "../buttons/Button";
 import Tag from "@/components/cards/Tag";
+import Button from "../buttons/Button";
 
 export default function PlaceRecommendCard() {
   return (

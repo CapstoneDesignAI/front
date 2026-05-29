@@ -1,17 +1,19 @@
+import postAIRecommendation from "@/api/ai/postAIRecommendation";
 import Button from "@/components/buttons/Button";
+import { useAuthStore } from "@/store/login/useAuthStore";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 
 type StepKey =
-  | "region"
   | "duration"
   | "transportation"
-  | "theme"
-  | "mood"
-  | "activityStyle"
-  | "purpose"
-  | "companion";
+  | "travel_purpose"
+  | "companion"
+  | "atmosphere"
+  | "activity_style"
+  | "region";
 
 type Step = {
   key: StepKey;
@@ -25,10 +27,10 @@ const steps: Step[] = [
   {
     key: "region",
     title: "여행 지역",
-    description: "도 기준으로 선택해 주세요. 정하지 않았다면 상관없음을 눌러도 괜찮아요.",
+    description:
+      "도 기준으로 선택해 주세요. 정하지 않았다면 넘어가도 괜찮아요.",
     optional: true,
     options: [
-      "상관없음",
       "서울특별시",
       "경기도",
       "강원도",
@@ -42,49 +44,92 @@ const steps: Step[] = [
     key: "duration",
     title: "여행 시간",
     description: "오늘 여행에 쓸 수 있는 시간을 알려주세요.",
-    options: ["1-2시간", "반나절", "하루", "1박 2일", "2박 이상"],
+    options: ["1~2시간", "반나절", "하루", "1박2일", "2박3일", "기타"],
   },
   {
-    key: "transportation",
-    title: "이동 수단",
-    description: "추천 동선이 현실적으로 이어지도록 이동 방식을 선택해 주세요.",
-    options: ["도보", "대중교통", "자가용", "택시", "상관없음"],
-  },
-  {
-    key: "theme",
-    title: "여행 테마",
-    description: "이번 여행에서 가장 끌리는 테마를 골라주세요.",
-    options: ["맛집", "카페", "자연", "문화/전시", "쇼핑", "로컬 탐방"],
-  },
-  {
-    key: "mood",
-    title: "선호 분위기",
-    description: "장소의 공기감은 어떤 쪽이 좋나요?",
-    options: ["감성적인", "조용한", "활기찬", "힙한", "여유로운", "로컬 느낌"],
-  },
-  {
-    key: "activityStyle",
-    title: "활동 스타일",
-    description: "몸을 많이 움직이는 일정과 쉬어가는 일정 중 어디에 가까운가요?",
-    options: ["휴식 중심", "가볍게 걷기", "액티비티 중심", "사진 많이", "맛집 중심"],
-  },
-  {
-    key: "purpose",
+    key: "travel_purpose",
     title: "여행 목적",
     description: "이번 여행에서 얻고 싶은 것을 골라주세요.",
-    options: ["힐링", "기념일", "새로운 경험", "데이트", "친목", "혼자만의 시간"],
+    options: [
+      "힐링",
+      "데이트",
+      "인스타감성",
+      "자연/풍경",
+      "현지경험",
+      "역사/문화",
+    ],
   },
   {
     key: "companion",
     title: "동행자",
     description: "누구와 함께 떠나나요?",
-    options: ["혼자", "친구", "연인", "가족", "동료", "아이와 함께"],
+    options: [
+      "혼자",
+      "친구",
+      "연인",
+      "가족",
+      "부모님",
+      "아이와 함께",
+      "반려동물과 함께",
+      "동아리/단체",
+    ],
+  },
+  {
+    key: "transportation",
+    title: "이동 수단",
+    description: "추천 동선이 현실적으로 이어지도록 이동 방식을 선택해 주세요.",
+    options: ["대중교통", "자차", "자전거", "도보"],
+  },
+  {
+    key: "atmosphere",
+    title: "선호 분위기",
+    description: "장소의 공기감은 어떤 쪽이 좋나요?",
+    optional: true,
+    options: ["조용한", "감성적인", "활기찬", "로컬 느낌", "힙한 분위기"],
+  },
+  {
+    key: "activity_style",
+    title: "활동 스타일",
+    description:
+      "몸을 많이 움직이는 일정과 쉬어가는 일정 중 어디에 가까운가요?",
+    optional: true,
+    options: ["액티비티/활동적", "정적/잔잔함"],
   },
 ];
 
+const normalizeOptionalAnswer = (answer?: string) => {
+  if (!answer || answer === "상관없음") {
+    return null;
+  }
+
+  return answer;
+};
+
+const buildAIRecommendationRequest = (
+  answers: Partial<Record<StepKey, string>>,
+): IPostAIRecommendationRequest => {
+  return {
+    duration: (answers.duration ?? "반나절") as AIRecommendationDuration,
+    transportation: (answers.transportation ??
+      "대중교통") as AIRecommendationTransportation,
+    travel_purpose: (answers.travel_purpose ??
+      "힐링") as AIRecommendationTravelPurpose,
+    companion: (answers.companion ?? "혼자") as AIRecommendationCompanion,
+    atmosphere: normalizeOptionalAnswer(
+      answers.atmosphere,
+    ) as AIRecommendationAtmosphere | null,
+    activity_style: normalizeOptionalAnswer(
+      answers.activity_style,
+    ) as AIRecommendationActivityStyle | null,
+    region: normalizeOptionalAnswer(answers.region),
+  };
+};
+
 export default function CustomTripScreen() {
+  const { accessToken } = useAuthStore();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Partial<Record<StepKey, string>>>({});
+  const [AIrequest, setAIRequest] = useState<IPostAIRecommendationRequest>();
 
   const currentStep = steps[currentStepIndex];
   const selectedAnswer = answers[currentStep.key];
@@ -94,14 +139,42 @@ export default function CustomTripScreen() {
     return steps.filter((step) => answers[step.key]).length;
   }, [answers]);
 
-  const selectAnswer = (answer: string) => {
+  const queryClient = useQueryClient();
+
+  const { mutate: AIRecommendation } = useMutation({
+    mutationFn: async (data: IPostAIRecommendationRequest) => {
+      const response = await postAIRecommendation(accessToken, data);
+      return response;
+    },
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({ queryKey: ["AI_RECOMMENDATION"] });
+      Alert.alert("추천 완료", response.title);
+    },
+    onError: (error) => {
+      console.error(error.message);
+      Alert.alert(
+        "추천 요청 실패",
+        error instanceof Error
+          ? error.message
+          : "AI 추천을 가져오지 못했습니다.",
+      );
+    },
+  });
+
+  const handleSelectAnswer = (answer: string) => {
+    if (answers[currentStep.key] === answer) {
+      setAnswers((prev) => ({
+        ...prev,
+        [currentStep.key]: answer,
+      }));
+    }
     setAnswers((prev) => ({
       ...prev,
       [currentStep.key]: answer,
     }));
   };
 
-  const goNext = () => {
+  const goNext = async () => {
     if (!selectedAnswer && !currentStep.optional) {
       return;
     }
@@ -116,11 +189,17 @@ export default function CustomTripScreen() {
     }
 
     if (isLastStep) {
-      const summary = steps
-        .map((step) => `${step.title}: ${nextAnswers[step.key] ?? "상관없음"}`)
-        .join("\n");
+      if (!accessToken) {
+        Alert.alert(
+          "로그인이 필요해요",
+          "AI 추천을 받으려면 다시 로그인해 주세요.",
+        );
+        return;
+      }
 
-      Alert.alert("입력 완료", summary);
+      const requestPayload = buildAIRecommendationRequest(nextAnswers);
+      setAIRequest(requestPayload);
+      AIRecommendation(requestPayload);
       return;
     }
 
@@ -193,7 +272,7 @@ export default function CustomTripScreen() {
                       ? "border-main-green bg-main-light-orange"
                       : "border-gray-04 bg-background"
                   }`}
-                  onPress={() => selectAnswer(option)}
+                  onPress={() => handleSelectAnswer(option)}
                 >
                   <Text
                     className={`text-[16px] ${
@@ -220,9 +299,13 @@ export default function CustomTripScreen() {
             </Text>
           </Pressable>
           <Button
-            title={isLastStep ? "추천 받기" : "다음"}
+            title={
+              isLastStep ? (AIrequest ? "다시 추천 받기" : "추천 받기") : "다음"
+            }
             size="small"
-            color={selectedAnswer || currentStep.optional ? "gradient" : "disabled"}
+            color={
+              selectedAnswer || currentStep.optional ? "gradient" : "disabled"
+            }
             onPress={goNext}
           />
         </View>

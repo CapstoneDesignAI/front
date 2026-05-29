@@ -1,10 +1,14 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 
-import type { FavoritePlace } from "./types";
-
 type FavoritePlaceItemProps = {
-  place: FavoritePlace;
+  place: {
+    id: number;
+    name: string;
+    distance: string;
+    description: string;
+    tags: string[];
+  };
 };
 
 export default function FavoritePlaceItem({ place }: FavoritePlaceItemProps) {

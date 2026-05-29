@@ -1,19 +1,24 @@
 import FavoriteFolderItem from "./FavoriteFolderItem";
-import type { FavoriteFolder } from "./types";
 
 type FavoriteFolderListProps = {
-  folders: FavoriteFolder[];
-  onFolderPress: (folderId: number) => void;
+  folders: IFolderItem[];
+  onDeleteFolder?: (folder: IFolderItem) => void;
+  onEditFolder?: (folder: IFolderItem) => void;
+  onFolderPress: (folderId: string) => void;
 };
 
 export default function FavoriteFolderList({
   folders,
+  onDeleteFolder,
+  onEditFolder,
   onFolderPress,
 }: FavoriteFolderListProps) {
   return folders.map((folder) => (
     <FavoriteFolderItem
-      key={folder.id}
+      key={folder.folder_id}
       folder={folder}
+      onDeletePress={onDeleteFolder}
+      onEditPress={onEditFolder}
       onPress={onFolderPress}
     />
   ));

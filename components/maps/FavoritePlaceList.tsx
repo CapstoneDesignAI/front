@@ -1,5 +1,12 @@
 import FavoritePlaceItem from "./FavoritePlaceItem";
-import type { FavoritePlace } from "./types";
+
+type FavoritePlace = {
+  id: number;
+  name: string;
+  distance: string;
+  description: string;
+  tags: string[];
+};
 
 type FavoritePlaceListProps = {
   places: FavoritePlace[];
