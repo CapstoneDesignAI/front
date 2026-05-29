@@ -81,6 +81,7 @@ export default function RootLayout() {
             name="custom-trip"
             options={{
               title: "커스텀 여행지 추천",
+              headerBackButtonDisplayMode: "minimal",
               headerStyle: { backgroundColor: "#FFF8F3" },
               headerTintColor: "#3A3A3A",
               headerShadowVisible: false,

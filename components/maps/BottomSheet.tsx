@@ -2,11 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, PanResponder, ScrollView, View } from "react-native";
 
 import BottomSheetHeader from "./BottomSheetHeader";
-import { favoriteFolders } from "./favoriteFolders";
 import FavoriteFolderList from "./FavoriteFolderList";
+import { favoriteFolders } from "./favoriteFolders";
 import FavoritePlaceList from "./FavoritePlaceList";
 
-const COLLAPSED_SHEET_HEIGHT = 30;
+const COLLAPSED_SHEET_HEIGHT = 100;
 const EXPANDED_SHEET_HEIGHT = 600;
 
 const clamp = (value: number, min: number, max: number) => {

@@ -37,7 +37,11 @@ export default function RouteRecommendCard() {
           <MaterialCommunityIcons name="routes" size={30} color="#7D9AAE" />
         </View>
         <View className="flex-row items-center gap-[4px]">
-          <MaterialCommunityIcons name="clock-outline" size={20} color="#F29B7F" />
+          <MaterialCommunityIcons
+            name="clock-outline"
+            size={20}
+            color="#F29B7F"
+          />
           <Text className="text-[20px] text-gray-01">2시간 5분</Text>
           <View className="flex-row gap-2">
             <Tag title="감성" isActivated={true} />
@@ -45,7 +49,9 @@ export default function RouteRecommendCard() {
           </View>
         </View>
         <View className="flex-row items-center gap-[4px]">
-          <Text className="text-[15px] text-gray-01">이 동선을 추천받은 사람</Text>
+          <Text className="text-[15px] text-gray-01">
+            이 동선을 추천받은 사람
+          </Text>
           <MaterialCommunityIcons name="thumb-up" size={15} color="#A8B89A" />
           <Text className="text-[15px] text-gray-02">18/30</Text>
         </View>
@@ -66,7 +72,9 @@ export default function RouteRecommendCard() {
                     {index + 1}
                   </Text>
                 </View>
-                {!isLast ? <View className="h-[34px] w-[2px] bg-main-green" /> : null}
+                {!isLast ? (
+                  <View className="h-[34px] w-[2px] bg-main-green" />
+                ) : null}
               </View>
               <View className="flex-1 pb-[8px]">
                 <View className="flex-row items-center justify-between">

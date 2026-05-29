@@ -34,7 +34,9 @@ export default function BottomSheetHeader({
             />
             <Text className="text-sm font-bold text-gray-02">폴더 목록</Text>
           </Pressable>
-        ) : null}
+        ) : (
+          <View className="h-[28px]"></View>
+        )}
         <Text className="mt-0.5 text-[22px] font-extrabold text-gray-01">
           {selectedFolder?.name ?? "즐겨찾기"}
         </Text>

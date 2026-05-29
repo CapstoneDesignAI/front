@@ -25,10 +25,10 @@ const steps: Step[] = [
   {
     key: "region",
     title: "여행 지역",
-    description: "도 기준으로 선택해 주세요. 정하지 않았다면 상관없음을 눌러도 괜찮아요.",
+    description:
+      "도 기준으로 선택해 주세요. 정하지 않았다면 넘어가도 괜찮아요.",
     optional: true,
     options: [
-      "상관없음",
       "서울특별시",
       "경기도",
       "강원도",
@@ -65,14 +65,28 @@ const steps: Step[] = [
   {
     key: "activityStyle",
     title: "활동 스타일",
-    description: "몸을 많이 움직이는 일정과 쉬어가는 일정 중 어디에 가까운가요?",
-    options: ["휴식 중심", "가볍게 걷기", "액티비티 중심", "사진 많이", "맛집 중심"],
+    description:
+      "몸을 많이 움직이는 일정과 쉬어가는 일정 중 어디에 가까운가요?",
+    options: [
+      "휴식 중심",
+      "가볍게 걷기",
+      "액티비티 중심",
+      "사진 많이",
+      "맛집 중심",
+    ],
   },
   {
     key: "purpose",
     title: "여행 목적",
     description: "이번 여행에서 얻고 싶은 것을 골라주세요.",
-    options: ["힐링", "기념일", "새로운 경험", "데이트", "친목", "혼자만의 시간"],
+    options: [
+      "힐링",
+      "기념일",
+      "새로운 경험",
+      "데이트",
+      "친목",
+      "혼자만의 시간",
+    ],
   },
   {
     key: "companion",
@@ -94,7 +108,13 @@ export default function CustomTripScreen() {
     return steps.filter((step) => answers[step.key]).length;
   }, [answers]);
 
-  const selectAnswer = (answer: string) => {
+  const handleSelectAnswer = (answer: string) => {
+    if (answers[currentStep.key] === answer) {
+      setAnswers((prev) => ({
+        ...prev,
+        [currentStep.key]: answer,
+      }));
+    }
     setAnswers((prev) => ({
       ...prev,
       [currentStep.key]: answer,
@@ -193,7 +213,7 @@ export default function CustomTripScreen() {
                       ? "border-main-green bg-main-light-orange"
                       : "border-gray-04 bg-background"
                   }`}
-                  onPress={() => selectAnswer(option)}
+                  onPress={() => handleSelectAnswer(option)}
                 >
                   <Text
                     className={`text-[16px] ${
@@ -222,7 +242,9 @@ export default function CustomTripScreen() {
           <Button
             title={isLastStep ? "추천 받기" : "다음"}
             size="small"
-            color={selectedAnswer || currentStep.optional ? "gradient" : "disabled"}
+            color={
+              selectedAnswer || currentStep.optional ? "gradient" : "disabled"
+            }
             onPress={goNext}
           />
         </View>

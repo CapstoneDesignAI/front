@@ -18,7 +18,6 @@ export default function TabLayout() {
         header: () => <Header />,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          borderRadius: 20,
           borderColor: Colors[colorScheme ?? "light"].gray04,
           backgroundColor: Colors[colorScheme ?? "light"].main05,
           height: 80,
