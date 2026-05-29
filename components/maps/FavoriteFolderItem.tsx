@@ -1,12 +1,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 
-import type { FavoriteFolder } from "./types";
-
 type FavoriteFolderItemProps = {
-  folder: FavoriteFolder;
-  onDeletePress?: (folder: FavoriteFolder) => void;
-  onEditPress?: (folder: FavoriteFolder) => void;
+  folder: IFolderItem;
+  onDeletePress?: (folder: IFolderItem) => void;
+  onEditPress?: (folder: IFolderItem) => void;
   onPress: (folderId: string) => void;
 };
 
@@ -19,7 +17,7 @@ export default function FavoriteFolderItem({
   return (
     <Pressable
       className="flex-row items-center gap-3 rounded-2xl border border-gray-04 bg-background p-[14px]"
-      onPress={() => onPress(folder.id)}
+      onPress={() => onPress(folder.folder_id)}
     >
       <View className="h-11 w-11 items-center justify-center rounded-full bg-main-light-orange">
         <MaterialCommunityIcons name="folder-heart" size={22} color="#F29B7F" />
@@ -33,14 +31,14 @@ export default function FavoriteFolderItem({
             {folder.name}
           </Text>
           <Text className="ml-2 text-sm font-bold text-main-green">
-            {folder.bookmarkCount ?? folder.places.length}
+            {folder.bookmark_count}
           </Text>
         </View>
         <Text className="text-[13px] text-gray-02" numberOfLines={1}>
-          {folder.description}
+          {folder.is_default ? "기본 폴더" : "사용자 폴더"}
         </Text>
       </View>
-      {!folder.isDefault ? (
+      {!folder.is_default ? (
         <View className="flex-row items-center">
           <Pressable
             accessibilityRole="button"

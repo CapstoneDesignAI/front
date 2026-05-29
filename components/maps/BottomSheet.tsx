@@ -16,8 +16,6 @@ import {
 
 import BottomSheetHeader from "./BottomSheetHeader";
 import FavoriteFolderList from "./FavoriteFolderList";
-import FavoritePlaceList from "./FavoritePlaceList";
-import type { FavoriteFolder } from "./types";
 
 const COLLAPSED_SHEET_HEIGHT = 100;
 const EXPANDED_SHEET_HEIGHT = 600;
@@ -65,20 +63,7 @@ export default function BottomSheet() {
     enabled: Boolean(accessToken),
   });
 
-  const folders = useMemo<FavoriteFolder[]>(() => {
-    if (!bookmarkFolders) {
-      return [];
-    }
-
-    return bookmarkFolders.map((folder) => ({
-      id: folder.folder_id,
-      name: folder.name,
-      description: folder.is_default ? "기본 폴더" : "사용자 폴더",
-      isDefault: folder.is_default,
-      bookmarkCount: folder.bookmark_count,
-      places: [],
-    }));
-  }, [bookmarkFolders]);
+  const folders = bookmarkFolders ?? [];
 
   const invalidateFolders = async () => {
     await queryClient.invalidateQueries({ queryKey: ["BOOKMARK_FOLDERS"] });
@@ -129,7 +114,7 @@ export default function BottomSheet() {
   });
 
   const selectedFolder = useMemo(() => {
-    return folders.find((folder) => folder.id === selectedFolderId);
+    return folders.find((folder) => folder.folder_id === selectedFolderId);
   }, [folders, selectedFolderId]);
 
   const openFolder = (folderId: string) => {
@@ -177,7 +162,7 @@ export default function BottomSheet() {
     });
   };
 
-  const handleEditFolder = (folder: FavoriteFolder) => {
+  const handleEditFolder = (folder: IFolderItem) => {
     if (!requireLogin()) {
       return;
     }
@@ -185,13 +170,13 @@ export default function BottomSheet() {
     promptFolderName(
       "폴더 이름 수정",
       (name) => {
-        editFolderMutation.mutate({ folderId: folder.id, name });
+        editFolderMutation.mutate({ folderId: folder.folder_id, name });
       },
       folder.name,
     );
   };
 
-  const handleDeleteFolder = (folder: FavoriteFolder) => {
+  const handleDeleteFolder = (folder: IFolderItem) => {
     if (!requireLogin()) {
       return;
     }
@@ -201,7 +186,7 @@ export default function BottomSheet() {
       {
         text: "삭제",
         style: "destructive",
-        onPress: () => deleteFolderMutation.mutate(folder.id),
+        onPress: () => deleteFolderMutation.mutate(folder.folder_id),
       },
     ]);
   };
@@ -279,7 +264,9 @@ export default function BottomSheet() {
             폴더를 불러오는 중이에요.
           </Text>
         ) : selectedFolder ? (
-          <FavoritePlaceList places={selectedFolder.places} />
+          <Text className="px-1 py-4 text-center text-[13px] text-gray-02">
+            저장한 장소 {selectedFolder.bookmark_count}개
+          </Text>
         ) : (
           <FavoriteFolderList
             folders={folders}

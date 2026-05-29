@@ -1,11 +1,11 @@
-type IFoldersListItem = {
+type IFolderItem = {
   folder_id: string;
   name: string;
   is_default: boolean;
   bookmark_count: number;
 };
 
-type IGetFoldersListResponse = IFoldersListItem[];
+type IGetFoldersListResponse = IFolderItem[];
 
 type IPostFolderItemRequest = {
   name: string;

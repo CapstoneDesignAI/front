@@ -1,15 +1,13 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 
-import type { FavoriteFolder } from "./types";
-
 type BottomSheetHeaderProps = {
   folderCount: number;
   isExpanded: boolean;
   onBackToFolders: () => void;
   onCreateFolder: () => void;
   onToggle: () => void;
-  selectedFolder?: FavoriteFolder;
+  selectedFolder?: IFolderItem;
 };
 
 export default function BottomSheetHeader({
@@ -44,7 +42,7 @@ export default function BottomSheetHeader({
         </Text>
         <Text className="mt-1 text-[13px] text-gray-02">
           {selectedFolder
-            ? `${selectedFolder.places.length}개의 저장한 장소`
+            ? `${selectedFolder.bookmark_count}개의 저장한 장소`
             : `${folderCount}개의 폴더`}
         </Text>
       </View>

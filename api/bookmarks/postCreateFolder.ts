@@ -4,7 +4,7 @@ export default async function postCreateFolder(
   accessToken: string,
   body: IPostFolderItemRequest,
 ) {
-  const data = await api.post<IPostFolderItemRequest, IFoldersListItem>({
+  const data = await api.post<IPostFolderItemRequest, IFolderItem>({
     endpoint: `/folders`,
     body,
     authorization: accessToken,
