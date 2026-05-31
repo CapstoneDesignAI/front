@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -43,26 +44,28 @@ export default function StampCoupon({
 
   return (
     <View
-      className="relative h-[216px] w-[342px] rounded-[28px] bg-white"
+      className="w-full gap-5 rounded-[24px] bg-white px-5 py-5"
       style={{ borderColor: "#E0D6C2", borderWidth: 1 }}
     >
-      <Text
-        className="absolute left-[21px] top-[18px] text-[30px] font-bold leading-[36px] text-[#1F1F1A]"
-        numberOfLines={1}
-      >
-        {title}
-      </Text>
+      <View className="gap-1">
+        <Text className="text-[22px] font-black text-gray-01" numberOfLines={1}>
+          {title}
+        </Text>
+        <Text className="text-[13px] font-medium text-gray-03">
+          {safeCompletedCount}개 수집 완료
+        </Text>
+      </View>
 
-      <View className="absolute left-[21px] top-[51px] w-[270px] gap-[5px]">
+      <View className="gap-2">
         {[0, 1].map((rowIndex) => (
           <View
             key={rowIndex}
-            className="flex-row items-center justify-between"
+            className="flex-row items-center justify-between px-1"
           >
             {stamps.slice(rowIndex * 5, rowIndex * 5 + 5).map((stamp) => (
               <View
                 key={stamp.id}
-                className="h-[28px] w-[28px] items-center justify-center rounded-full"
+                className="h-[30px] w-[30px] items-center justify-center rounded-full"
                 style={{
                   backgroundColor: stamp.isCompleted ? "#739E6B" : "#FFFBF1",
                   borderColor: "#E0D6C2",
@@ -72,7 +75,7 @@ export default function StampCoupon({
                 {stamp.isCompleted ? (
                   <MaterialCommunityIcons
                     name="check-bold"
-                    size={18}
+                    size={17}
                     color="#FFFFFF"
                   />
                 ) : null}
@@ -82,15 +85,22 @@ export default function StampCoupon({
         ))}
       </View>
 
-      <Text className="absolute left-[21px] top-[120px] text-[16px] font-medium leading-[20px] text-[#F08057]">
-        {safeCompletedCount}/{safeTotalCount} 수집 완료 · {guideText}
+      <Text className="text-[15px] font-medium leading-5 text-main-orange">
+        {safeCompletedCount}/{safeTotalCount} · {guideText}
       </Text>
 
       <Pressable
-        className="absolute left-[21px] top-[149px] h-[34px] w-[293px] items-center justify-center rounded-full bg-[#F08057]"
-        onPress={onPress}
+        className="h-[46px] items-center justify-center rounded-[16px] bg-main-orange"
+        onPress={() => {
+          if (onPress) {
+            onPress();
+            return;
+          }
+
+          router.push("/regionMissionList");
+        }}
       >
-        <Text className="text-[16px] font-bold leading-[20px] text-white">
+        <Text className="text-[16px] font-bold text-white">
           {buttonTitle}
         </Text>
       </Pressable>

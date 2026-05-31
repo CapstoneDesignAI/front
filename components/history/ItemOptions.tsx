@@ -1,21 +1,27 @@
 import React from "react";
-import { useState } from "react";
 import { View } from "react-native";
 import FilterButton from "../buttons/FilterButton";
 
-const options = ["전체", "동선", "스탬프", "엠블럼"];
+export const historyOptions = ["전체", "동선", "스탬프", "엠블럼"] as const;
+export type HistoryOption = (typeof historyOptions)[number];
 
-export default function ItemOptions() {
-  const [selectedOption, setSelectedOption] = useState(options[0]);
+type ItemOptionsProps = {
+  selectedOption: HistoryOption;
+  onSelectOption: (option: HistoryOption) => void;
+};
 
+export default function ItemOptions({
+  selectedOption,
+  onSelectOption,
+}: ItemOptionsProps) {
   return (
-    <View className="flex-row gap-[5px] ">
-      {options.map((option, idx) => (
+    <View className="flex-row gap-[6px]">
+      {historyOptions.map((option) => (
         <FilterButton
-          key={idx}
+          key={option}
           title={option}
           isSelected={selectedOption === option}
-          onPress={() => setSelectedOption(option)}
+          onPress={() => onSelectOption(option)}
         />
       ))}
     </View>

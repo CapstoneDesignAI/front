@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import React from "react";
 import {
   Image,
@@ -25,43 +26,59 @@ export default function MissionItem({
   onPress,
 }: MissionItemProps) {
   return (
-    <View className="relative h-[116px] w-[327px] rounded-[18px] bg-white">
-      <View className="absolute left-[16px] top-[16px] h-[76px] w-[76px] overflow-hidden rounded-[14px] bg-[#F0F0F0]">
+    <View className="w-full flex-row items-center gap-4 rounded-[18px] bg-white p-4">
+      <View className="h-[72px] w-[72px] overflow-hidden rounded-[14px] bg-[#F0F0F0]">
         {imageSource ? (
           <Image
             source={imageSource}
             className="h-full w-full"
             resizeMode="cover"
           />
-        ) : null}
+        ) : (
+          <View className="h-full w-full items-center justify-center">
+            <Text className="text-[12px] font-medium text-gray-03">미션</Text>
+          </View>
+        )}
       </View>
 
-      <Text
-        className="absolute left-[108px] top-[18px] w-[194px] text-[22px] font-bold leading-[28px] text-[#1F1F1F]"
-        numberOfLines={1}
-      >
-        {title}
-      </Text>
+      <View className="min-w-0 flex-1 gap-2">
+        <View className="gap-1">
+          <Text
+            className="text-[17px] font-bold leading-6 text-gray-01"
+            numberOfLines={1}
+          >
+            {title}
+          </Text>
+          <Text
+            className="text-[13px] leading-5 text-gray-02"
+            numberOfLines={1}
+          >
+            {rewardText}
+          </Text>
+        </View>
 
-      <Text
-        className="absolute left-[108px] top-[47px] w-[194px] text-[16px] leading-[22px] text-[#737373]"
-        numberOfLines={1}
-      >
-        {rewardText}
-      </Text>
+        <View className="flex-row items-center justify-between gap-3">
+          <Text className="rounded-full bg-main-light-orange px-2.5 py-1 text-[12px] font-bold text-main-green">
+            {difficulty}
+          </Text>
 
-      <Text className="absolute left-[108px] top-[70px] text-[16px] leading-[22px] text-[#8FA87A]">
-        {difficulty}
-      </Text>
+          <Pressable
+            className="h-[34px] min-w-[72px] items-center justify-center rounded-full bg-[#FFEBE0] px-4"
+            onPress={() => {
+              if (onPress) {
+                onPress();
+                return;
+              }
 
-      <Pressable
-        className="absolute left-[228px] top-[72px] h-[28px] w-[72px] items-center justify-center rounded-full bg-[#FFEBE0]"
-        onPress={onPress}
-      >
-        <Text className="text-[15px] font-bold leading-[19px] text-[#F28569]">
-          {buttonTitle}
-        </Text>
-      </Pressable>
+              router.push("/MissionDetail");
+            }}
+          >
+            <Text className="text-[14px] font-bold text-main-orange">
+              {buttonTitle}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
     </View>
   );
 }
