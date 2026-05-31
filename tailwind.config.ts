@@ -7,10 +7,10 @@ module.exports = {
     extend: {
       colors: {
         main: {
-          DEFAULT: "#A8B89A",
-          orange: "#F29B7F",
-          green: "#A8B89A",
-          blue: "#7D9AAE",
+          DEFAULT: "#739E6B",
+          orange: "#F08057",
+          green: "#739E6B",
+          blue: "#7094AD",
           "light-orange": "#F6E6DC",
         },
         gray: {
