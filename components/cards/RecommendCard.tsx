@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
+import Button from "../buttons/Button";
 
 type RecommendCardProps = {
   recommendation: IPostAIRecommendationResponse;
@@ -99,7 +100,15 @@ export default function RecommendCard({
         })}
       </View>
 
-      {/* <View className="flex-row items-center">
+      <View className="flex-row items-center">
+        <Button
+          title="맘에 들어요"
+          size="small"
+          color="gradient"
+          onPress={() => {
+            onDislikePress?.();
+          }}
+        />
         <Button
           title="별로예요"
           size="small"
@@ -108,18 +117,7 @@ export default function RecommendCard({
             onDislikePress?.();
           }}
         />
-        <Pressable
-          accessibilityRole="button"
-          className="h-[46px] w-[46px] items-center justify-center"
-          onPress={onBookmarkPress}
-        >
-          <MaterialCommunityIcons
-            name="bookmark-outline"
-            size={30}
-            color="#7D9AAE"
-          />
-        </Pressable>
-      </View> */}
+      </View>
     </View>
   );
 }
