@@ -10,6 +10,7 @@ type SmallEmblemItemProps = {
   subtitle?: string;
   status?: string;
   isLocked?: boolean;
+  imageUrl?: string | null;
 };
 
 const EMBLEMS = {
@@ -33,6 +34,7 @@ export default function SmallEmblemItem({
   subtitle,
   status = "획득 완료",
   isLocked = false,
+  imageUrl,
 }: SmallEmblemItemProps) {
   const emblem = EMBLEMS[type];
 
@@ -48,7 +50,7 @@ export default function SmallEmblemItem({
           <MaterialCommunityIcons name="help" size={22} color="#8C8C8C" />
         ) : (
           <Image
-            source={emblem.image}
+            source={imageUrl ? { uri: imageUrl } : emblem.image}
             className="h-full w-full"
             resizeMode="cover"
           />

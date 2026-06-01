@@ -1,14 +1,9 @@
 import api from "@/_lib/fetcher";
 
-interface props {
-  accessToken: string;
-  mission_id: string;
-}
-
-export default async function getMissionDetailItem({
-  accessToken,
-  mission_id,
-}: props) {
+export default async function getMissionDetailItem(
+  accessToken: string,
+  mission_id: string,
+) {
   const data = await api.get<IGetMissionDetailItemResponse>({
     endpoint: `/missions/${mission_id}`,
     authorization: accessToken,

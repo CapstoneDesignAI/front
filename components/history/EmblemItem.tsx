@@ -6,6 +6,7 @@ type EmblemType = "traveler" | "explorer" | "master";
 type EmblemItemProps = {
   type?: EmblemType;
   title?: string;
+  imageUrl?: string | null;
   label?: string;
   completedMissionCount?: number;
   acquiredDate?: string;
@@ -31,6 +32,7 @@ const EMBLEMS = {
 export default function EmblemItem({
   type = "explorer",
   title,
+  imageUrl,
   completedMissionCount = 5,
   acquiredDate = "2026.05.30",
   buttonTitle = "공유하기",
@@ -42,7 +44,7 @@ export default function EmblemItem({
     <View className="w-full flex-row items-center gap-4 rounded-[22px] bg-white p-4">
       <View className="h-[86px] w-[86px] overflow-hidden rounded-[24px] bg-main-light-orange">
         <Image
-          source={emblem.image}
+          source={imageUrl ? { uri: imageUrl } : emblem.image}
           className="h-full w-full"
           resizeMode="cover"
         />

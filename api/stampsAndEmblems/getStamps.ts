@@ -1,11 +1,6 @@
 import api from "@/_lib/fetcher";
 
-interface props {
-  accessToken: string;
-  region_id: string;
-}
-
-export default async function getStamps({ accessToken, region_id }: props) {
+export default async function getStamps(accessToken: string, region_id: string) {
   const data = await api.get<IGetStampsResponse>({
     endpoint: `/stamps/${region_id}`,
     authorization: accessToken,

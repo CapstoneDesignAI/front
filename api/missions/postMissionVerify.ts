@@ -1,16 +1,10 @@
 import api from "@/_lib/fetcher";
 
-interface props {
-  accessToken: string;
-  mission_id: string;
-  body: IPostMissionVerifyRequest;
-}
-
-export default async function getMissionDetailItem({
-  accessToken,
-  mission_id,
-  body,
-}: props) {
+export default async function postMissionVerify(
+  accessToken: string,
+  mission_id: string,
+  body: IPostMissionVerifyRequest,
+) {
   const data = await api.post<
     IPostMissionVerifyRequest,
     IPostMissionVerifyResponse

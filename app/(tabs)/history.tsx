@@ -1,11 +1,17 @@
+import getEmblems from "@/api/stampsAndEmblems/getEmblems";
+import getStamps from "@/api/stampsAndEmblems/getStamps";
 import EmblemItem from "@/components/history/EmblemItem";
 import ItemOptions, { HistoryOption } from "@/components/history/ItemOptions";
 import MissionItem from "@/components/history/MissionItem";
 import StampCoupon from "@/components/history/StampCoupon";
+import { useAuthStore } from "@/store/login/useAuthStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+
+const DEFAULT_REGION_ID = "1";
 
 const missions = [
   {
@@ -117,11 +123,27 @@ function SavedTripCard({
 }
 
 export default function HistoryScreen() {
+  const accessToken = useAuthStore((state) => state.accessToken);
   const [selectedOption, setSelectedOption] = useState<HistoryOption>("전체");
+
+  const { data: stampData } = useQuery({
+    queryKey: ["STAMPS", DEFAULT_REGION_ID, accessToken],
+    queryFn: () => getStamps(accessToken, DEFAULT_REGION_ID),
+    enabled: Boolean(accessToken),
+    retry: false,
+  });
+
+  const { data: emblems } = useQuery({
+    queryKey: ["EMBLEMS", accessToken],
+    queryFn: () => getEmblems(accessToken),
+    enabled: Boolean(accessToken),
+    retry: false,
+  });
 
   const showRoutes = selectedOption === "전체" || selectedOption === "동선";
   const showStamps = selectedOption === "전체" || selectedOption === "스탬프";
   const showEmblems = selectedOption === "전체" || selectedOption === "엠블럼";
+  const visibleEmblems = emblems?.length ? emblems : [];
 
   return (
     <ScrollView
@@ -155,8 +177,15 @@ export default function HistoryScreen() {
 
         {showStamps ? (
           <View className="gap-3">
-            <SectionTitle title="스탬프 쿠폰" actionText="8 / 10" />
-            <StampCoupon />
+            <SectionTitle
+              title="스탬프 쿠폰"
+              actionText={`${stampData?.collected_stamps ?? 8} / ${stampData?.total_stamps ?? 10}`}
+            />
+            <StampCoupon
+              completedCount={stampData?.collected_stamps ?? 8}
+              totalCount={stampData?.total_stamps ?? 10}
+              rewardText={stampData?.next_reward_text}
+            />
             {selectedOption === "스탬프" ? (
               <View className="gap-3">
                 <SectionTitle title="진행 중인 미션" />
@@ -175,10 +204,27 @@ export default function HistoryScreen() {
 
         {showEmblems ? (
           <View className="gap-3">
-            <SectionTitle title="획득한 엠블럼" actionText="3개" />
-            <EmblemItem type="master" />
-            <EmblemItem type="traveler" />
-            <EmblemItem type="explorer" />
+            <SectionTitle
+              title="획득한 엠블럼"
+              actionText={`${visibleEmblems.length || 3}개`}
+            />
+            {visibleEmblems.length ? (
+              visibleEmblems.map((emblem) => (
+                <EmblemItem
+                  key={emblem.emblem_id}
+                  title={emblem.name}
+                  imageUrl={emblem.image_url}
+                  completedMissionCount={emblem.unlock_stamp_threshold}
+                  acquiredDate={emblem.acquired_at}
+                />
+              ))
+            ) : (
+              <>
+                <EmblemItem type="master" />
+                <EmblemItem type="traveler" />
+                <EmblemItem type="explorer" />
+              </>
+            )}
           </View>
         ) : null}
       </View>

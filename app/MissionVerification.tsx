@@ -1,6 +1,11 @@
+import postMissionVerify from "@/api/missions/postMissionVerify";
+import { useCurrentLocation } from "@/hooks/use-current-location";
+import { useAuthStore } from "@/store/login/useAuthStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Image as ExpoImage } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import { useLocalSearchParams } from "expo-router";
 import { cssInterop } from "nativewind";
 import React, { useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
@@ -10,7 +15,43 @@ cssInterop(ExpoImage, {
 });
 
 export default function MissionVerificationScreen() {
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const queryClient = useQueryClient();
+  const { missionId, title, distanceText } = useLocalSearchParams<{
+    missionId?: string;
+    title?: string;
+    distanceText?: string;
+  }>();
+  const { coords, errorMessage, isLoading, refresh } = useCurrentLocation();
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+
+  const verifyMutation = useMutation({
+    mutationFn: () => {
+      if (!accessToken || !missionId || !coords) {
+        throw new Error("미션 인증에 필요한 정보가 부족합니다.");
+      }
+
+      return postMissionVerify(accessToken, missionId, {
+        mission_id: missionId,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        image_url: selectedImageUri,
+      });
+    },
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({ queryKey: ["MISSIONS"] });
+      await queryClient.invalidateQueries({ queryKey: ["MISSION_DETAIL"] });
+      await queryClient.invalidateQueries({ queryKey: ["STAMPS"] });
+      await queryClient.invalidateQueries({ queryKey: ["EMBLEMS"] });
+      Alert.alert("미션 인증 완료", response.message);
+    },
+    onError: (error) => {
+      Alert.alert(
+        "미션 인증 실패",
+        error instanceof Error ? error.message : "다시 시도해 주세요.",
+      );
+    },
+  });
 
   const handlePickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -44,6 +85,20 @@ export default function MissionVerificationScreen() {
     setSelectedImageUri(imageUri);
   };
 
+  const handleSubmitVerification = () => {
+    if (!selectedImageUri) {
+      Alert.alert("사진이 필요해요", "미션 인증 사진을 먼저 업로드해 주세요.");
+      return;
+    }
+
+    if (!coords) {
+      Alert.alert("위치 인증이 필요해요", "현재 위치를 먼저 확인해 주세요.");
+      return;
+    }
+
+    verifyMutation.mutate();
+  };
+
   return (
     <ScrollView
       className="flex-1 bg-background"
@@ -56,7 +111,7 @@ export default function MissionVerificationScreen() {
             미션 인증
           </Text>
           <Text className="text-[15px] leading-6 text-gray-02">
-            위치 확인 후 사진을 업로드해주세요.
+            {title ? `${title} 인증을 진행해 주세요.` : "위치 확인 후 사진을 업로드해주세요."}
           </Text>
         </View>
 
@@ -70,14 +125,22 @@ export default function MissionVerificationScreen() {
                 위치 인증
               </Text>
               <Text className="mt-1 text-[14px] leading-5 text-gray-02">
-                미션 장소 반경 300m 안에서 인증
+                {distanceText ?? "미션 장소 반경 300m 안에서 인증"}
               </Text>
+              {errorMessage ? (
+                <Text className="mt-1 text-[12px] text-main-orange">
+                  {errorMessage}
+                </Text>
+              ) : null}
             </View>
           </View>
 
-          <Pressable className="h-[46px] items-center justify-center rounded-[16px] bg-main-light-orange">
+          <Pressable
+            className="h-[46px] items-center justify-center rounded-[16px] bg-main-light-orange"
+            onPress={refresh}
+          >
             <Text className="text-[15px] font-bold text-main-orange">
-              확인하기
+              {isLoading ? "확인 중" : coords ? "위치 확인 완료" : "확인하기"}
             </Text>
           </Pressable>
         </View>
@@ -123,6 +186,22 @@ export default function MissionVerificationScreen() {
             )}
           </Pressable>
         </View>
+
+        <Pressable
+          className={`h-[52px] items-center justify-center rounded-[16px] ${
+            selectedImageUri && coords ? "bg-main-orange" : "bg-gray-04"
+          }`}
+          onPress={handleSubmitVerification}
+          disabled={verifyMutation.isPending}
+        >
+          <Text
+            className={`text-[17px] font-bold ${
+              selectedImageUri && coords ? "text-white" : "text-gray-02"
+            }`}
+          >
+            {verifyMutation.isPending ? "인증 중" : "인증 제출하기"}
+          </Text>
+        </Pressable>
       </View>
     </ScrollView>
   );

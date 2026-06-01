@@ -13,3 +13,5 @@ type IGetEmblemResponse = {
   unlock_stamp_threshold: number;
   acquired_at: string;
 };
+
+type IGetEmblemsResponse = IGetEmblemResponse[];

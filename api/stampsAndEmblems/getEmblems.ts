@@ -1,11 +1,7 @@
 import api from "@/_lib/fetcher";
 
-interface props {
-  accessToken: string;
-}
-
-export default async function getStamps({ accessToken }: props) {
-  const data = await api.get<IGetEmblemResponse>({
+export default async function getEmblems(accessToken: string) {
+  const data = await api.get<IGetEmblemsResponse>({
     endpoint: `/emblems`,
     authorization: accessToken,
   });

@@ -14,6 +14,7 @@ type MissionItemProps = {
   difficulty?: string;
   buttonTitle?: string;
   imageSource?: ImageSourcePropType;
+  isCompleted?: boolean;
   onPress?: () => void;
 };
 
@@ -23,6 +24,7 @@ export default function MissionItem({
   difficulty = "쉬움",
   buttonTitle = "인증",
   imageSource,
+  isCompleted = false,
   onPress,
 }: MissionItemProps) {
   return (
@@ -59,11 +61,13 @@ export default function MissionItem({
 
         <View className="flex-row items-center justify-between gap-3">
           <Text className="rounded-full bg-main-light-orange px-2.5 py-1 text-[12px] font-bold text-main-green">
-            {difficulty}
+            {isCompleted ? "완료" : difficulty}
           </Text>
 
           <Pressable
-            className="h-[34px] min-w-[72px] items-center justify-center rounded-full bg-[#FFEBE0] px-4"
+            className={`h-[34px] min-w-[72px] items-center justify-center rounded-full px-4 ${
+              isCompleted ? "bg-gray-04" : "bg-[#FFEBE0]"
+            }`}
             onPress={() => {
               if (onPress) {
                 onPress();
@@ -73,8 +77,12 @@ export default function MissionItem({
               router.push("/MissionDetail");
             }}
           >
-            <Text className="text-[14px] font-bold text-main-orange">
-              {buttonTitle}
+            <Text
+              className={`text-[14px] font-bold ${
+                isCompleted ? "text-gray-02" : "text-main-orange"
+              }`}
+            >
+              {isCompleted ? "완료" : buttonTitle}
             </Text>
           </Pressable>
         </View>

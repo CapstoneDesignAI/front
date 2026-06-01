@@ -1,4 +1,5 @@
 import getUserProfile from "@/api/user/getUserProfile";
+import getEmblems from "@/api/stampsAndEmblems/getEmblems";
 import SmallEmblemItem from "@/components/history/SmallEmblemItem";
 import MyProfileCard from "@/components/my/MyProfileCard";
 import { useAuthStore } from "@/store/login/useAuthStore";
@@ -84,9 +85,17 @@ export default function MyScreen() {
     staleTime: 1000 * 60 * 5,
   });
 
+  const { data: emblems } = useQuery({
+    queryKey: ["EMBLEMS", accessToken],
+    queryFn: () => getEmblems(accessToken),
+    enabled: Boolean(accessToken),
+    retry: false,
+  });
+
   const nickname = isLoading
     ? "불러오는 중..."
     : (userProfile?.nickName ?? "로그인이 필요합니다.");
+  const visibleEmblems = emblems?.length ? emblems.slice(0, 4) : [];
 
   return (
     <ScrollView
@@ -109,23 +118,34 @@ export default function MyScreen() {
           </Text>
 
           <View className="flex-row flex-wrap justify-between gap-y-7">
-            {acquiredEmblems.map((emblem) => (
-              <SmallEmblemItem
-                key={emblem.title}
-                type={emblem.type}
-                title={emblem.title}
-                status={emblem.status}
-              />
-            ))}
+            {visibleEmblems.length
+              ? visibleEmblems.map((emblem) => (
+                  <SmallEmblemItem
+                    key={emblem.emblem_id}
+                    title={emblem.name}
+                    imageUrl={emblem.image_url}
+                    status="획득 완료"
+                  />
+                ))
+              : acquiredEmblems.map((emblem) => (
+                  <SmallEmblemItem
+                    key={emblem.title}
+                    type={emblem.type}
+                    title={emblem.title}
+                    status={emblem.status}
+                  />
+                ))}
 
-            {lockedEmblems.map((emblem) => (
-              <SmallEmblemItem
-                key={emblem.title}
-                title={emblem.title}
-                status={emblem.status}
-                isLocked
-              />
-            ))}
+            {(visibleEmblems.length ? lockedEmblems.slice(0, 4 - visibleEmblems.length) : lockedEmblems).map(
+              (emblem) => (
+                <SmallEmblemItem
+                  key={emblem.title}
+                  title={emblem.title}
+                  status={emblem.status}
+                  isLocked
+                />
+              ),
+            )}
           </View>
         </View>
 
