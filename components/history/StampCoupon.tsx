@@ -1,4 +1,7 @@
+import getStamps from "@/api/stampsAndEmblems/getStamps";
+import { useAuthStore } from "@/store/login/useAuthStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useMemo } from "react";
 import { Text, View } from "react-native";
@@ -10,22 +13,42 @@ type StampCouponProps = {
   totalCount?: number;
   rewardText?: string;
   isMissionPage?: boolean;
+  regionId?: string;
   onPress?: () => void;
 };
 
 const STAMP_TOTAL_COUNT = 10;
+const DEFAULT_REGION_ID = "1";
 
 export default function StampCoupon({
   title = "단양 스탬프 쿠폰",
-  completedCount = 8,
-  totalCount = STAMP_TOTAL_COUNT,
+  completedCount,
+  totalCount,
   rewardText,
   isMissionPage = false,
+  regionId = DEFAULT_REGION_ID,
   onPress,
 }: StampCouponProps) {
-  const safeTotalCount = Math.min(Math.max(totalCount, 1), STAMP_TOTAL_COUNT);
+  const accessToken = useAuthStore((state) => state.accessToken);
+
+  const { data: stampData } = useQuery({
+    queryKey: ["STAMPS", regionId, accessToken],
+    queryFn: () => getStamps(accessToken, regionId),
+    enabled: Boolean(accessToken && regionId),
+    retry: false,
+  });
+
+  const resolvedCompletedCount =
+    completedCount ?? stampData?.collected_stamps ?? 8;
+  const resolvedTotalCount = totalCount ?? stampData?.total_stamps ?? 10;
+  const resolvedRewardText = rewardText ?? stampData?.next_reward_text;
+
+  const safeTotalCount = Math.min(
+    Math.max(resolvedTotalCount, 1),
+    STAMP_TOTAL_COUNT,
+  );
   const safeCompletedCount = Math.min(
-    Math.max(completedCount, 0),
+    Math.max(resolvedCompletedCount, 0),
     safeTotalCount,
   );
   const remainingCount = safeTotalCount - safeCompletedCount;
@@ -38,7 +61,7 @@ export default function StampCoupon({
     [safeCompletedCount, safeTotalCount],
   );
   const guideText =
-    rewardText ??
+    resolvedRewardText ??
     (remainingCount > 0
       ? `${remainingCount}개 더 모으면 엠블럼 획득`
       : "엠블럼 획득 완료");
@@ -100,7 +123,10 @@ export default function StampCoupon({
               return;
             }
 
-            router.push("/regionMissionList");
+            router.push({
+              pathname: "/regionMissionList",
+              params: { regionId },
+            });
           }}
         />
       )}

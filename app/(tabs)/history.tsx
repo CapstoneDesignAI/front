@@ -1,5 +1,4 @@
 import getEmblems from "@/api/stampsAndEmblems/getEmblems";
-import getStamps from "@/api/stampsAndEmblems/getStamps";
 import EmblemItem from "@/components/history/EmblemItem";
 import ItemOptions, { HistoryOption } from "@/components/history/ItemOptions";
 import MissionItem from "@/components/history/MissionItem";
@@ -126,13 +125,6 @@ export default function HistoryScreen() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const [selectedOption, setSelectedOption] = useState<HistoryOption>("전체");
 
-  const { data: stampData } = useQuery({
-    queryKey: ["STAMPS", DEFAULT_REGION_ID, accessToken],
-    queryFn: () => getStamps(accessToken, DEFAULT_REGION_ID),
-    enabled: Boolean(accessToken),
-    retry: false,
-  });
-
   const { data: emblems } = useQuery({
     queryKey: ["EMBLEMS", accessToken],
     queryFn: () => getEmblems(accessToken),
@@ -177,15 +169,8 @@ export default function HistoryScreen() {
 
         {showStamps ? (
           <View className="gap-3">
-            <SectionTitle
-              title="스탬프 쿠폰"
-              actionText={`${stampData?.collected_stamps ?? 8} / ${stampData?.total_stamps ?? 10}`}
-            />
-            <StampCoupon
-              completedCount={stampData?.collected_stamps ?? 8}
-              totalCount={stampData?.total_stamps ?? 10}
-              rewardText={stampData?.next_reward_text}
-            />
+            <SectionTitle title="스탬프 쿠폰" />
+            <StampCoupon regionId={DEFAULT_REGION_ID} />
             {selectedOption === "스탬프" ? (
               <View className="gap-3">
                 <SectionTitle title="진행 중인 미션" />

@@ -21,7 +21,7 @@ export default function MissionDetailScreen() {
   const { missionId } = useLocalSearchParams<{ missionId?: string }>();
   const selectedMissionId = missionId ?? fallbackMissionDetail.mission_id;
 
-  const { data: missionDetail } = useQuery({
+  const { data: missionDetail, isLoading: isMissionDetailLoading } = useQuery({
     queryKey: ["MISSION_DETAIL", selectedMissionId, accessToken],
     queryFn: () => getMissionDetailItem(accessToken, selectedMissionId),
     enabled: Boolean(accessToken && selectedMissionId),
@@ -50,7 +50,7 @@ export default function MissionDetailScreen() {
 
         <View className="gap-2">
           <Text className="text-[28px] font-black text-gray-01">
-            {mission.title}
+            {isMissionDetailLoading ? "미션 정보를 불러오는 중" : mission.title}
           </Text>
           <Text className="text-[15px] leading-6 text-gray-02">
             {mission.condition}
@@ -82,8 +82,6 @@ export default function MissionDetailScreen() {
               pathname: "/MissionVerification",
               params: {
                 missionId: mission.mission_id,
-                title: mission.title,
-                distanceText: mission.distance_text,
               },
             })
           }

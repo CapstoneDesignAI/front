@@ -1,8 +1,9 @@
+import getMissionDetailItem from "@/api/missions/getMissionDetailItem";
 import postMissionVerify from "@/api/missions/postMissionVerify";
 import { useCurrentLocation } from "@/hooks/use-current-location";
 import { useAuthStore } from "@/store/login/useAuthStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image as ExpoImage } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams } from "expo-router";
@@ -17,19 +18,31 @@ cssInterop(ExpoImage, {
 export default function MissionVerificationScreen() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const queryClient = useQueryClient();
-  const { missionId, title, distanceText } = useLocalSearchParams<{
+  const { missionId } = useLocalSearchParams<{
     missionId?: string;
-    title?: string;
-    distanceText?: string;
   }>();
   const { coords, errorMessage, isLoading, refresh } = useCurrentLocation();
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+
+  const { data: missionDetail } = useQuery({
+    queryKey: ["MISSION_DETAIL", missionId, accessToken],
+    queryFn: () => getMissionDetailItem(accessToken, missionId ?? ""),
+    enabled: Boolean(accessToken && missionId),
+    retry: false,
+  });
 
   const verifyMutation = useMutation({
     mutationFn: () => {
       if (!accessToken || !missionId || !coords) {
         throw new Error("미션 인증에 필요한 정보가 부족합니다.");
       }
+
+      console.log(
+        missionId,
+        coords.latitude,
+        coords.longitude,
+        selectedImageUri,
+      );
 
       return postMissionVerify(accessToken, missionId, {
         mission_id: missionId,
@@ -107,11 +120,11 @@ export default function MissionVerificationScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <Text className="text-[28px] font-black text-gray-01">
-            미션 인증
-          </Text>
+          <Text className="text-[28px] font-black text-gray-01">미션 인증</Text>
           <Text className="text-[15px] leading-6 text-gray-02">
-            {title ? `${title} 인증을 진행해 주세요.` : "위치 확인 후 사진을 업로드해주세요."}
+            {missionDetail?.title
+              ? `${missionDetail.title} 인증을 진행해 주세요.`
+              : "위치 확인 후 사진을 업로드해주세요."}
           </Text>
         </View>
 
@@ -125,7 +138,8 @@ export default function MissionVerificationScreen() {
                 위치 인증
               </Text>
               <Text className="mt-1 text-[14px] leading-5 text-gray-02">
-                {distanceText ?? "미션 장소 반경 300m 안에서 인증"}
+                {missionDetail?.distance_text ??
+                  "미션 장소 반경 300m 안에서 인증"}
               </Text>
               {errorMessage ? (
                 <Text className="mt-1 text-[12px] text-main-orange">

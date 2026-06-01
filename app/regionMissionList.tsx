@@ -1,5 +1,4 @@
 import getMissionsList from "@/api/missions/getMissionsList";
-import getStamps from "@/api/stampsAndEmblems/getStamps";
 import MissionItem from "@/components/history/MissionItem";
 import StampCoupon from "@/components/history/StampCoupon";
 import { useAuthStore } from "@/store/login/useAuthStore";
@@ -39,13 +38,6 @@ export default function RegionMissionListScreen() {
   const { regionId } = useLocalSearchParams<{ regionId?: string }>();
   const selectedRegionId = regionId ?? DEFAULT_REGION_ID;
 
-  const { data: stampData } = useQuery({
-    queryKey: ["STAMPS", selectedRegionId, accessToken],
-    queryFn: () => getStamps(accessToken, selectedRegionId),
-    enabled: Boolean(accessToken),
-    retry: false,
-  });
-
   const { data: missionData, isLoading: isMissionsLoading } = useQuery({
     queryKey: ["MISSIONS", selectedRegionId, accessToken],
     queryFn: () => getMissionsList(accessToken, selectedRegionId),
@@ -71,9 +63,7 @@ export default function RegionMissionListScreen() {
         <View className="items-center gap-4">
           <StampCoupon
             title="강원 고성 스탬프 쿠폰"
-            completedCount={stampData?.collected_stamps ?? 8}
-            totalCount={stampData?.total_stamps ?? 10}
-            rewardText={stampData?.next_reward_text}
+            regionId={selectedRegionId}
             isMissionPage={true}
           />
 
@@ -90,6 +80,7 @@ export default function RegionMissionListScreen() {
             {missions.map((mission) => (
               <MissionItem
                 key={mission.mission_id}
+                missionId={mission.mission_id}
                 title={mission.title}
                 rewardText={`사진 업로드 · 스탬프 ${mission.stamp_count}개`}
                 difficulty={mission.difficulty}

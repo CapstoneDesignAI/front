@@ -1,3 +1,6 @@
+import getMissionDetailItem from "@/api/missions/getMissionDetailItem";
+import { useAuthStore } from "@/store/login/useAuthStore";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -9,6 +12,7 @@ import {
 } from "react-native";
 
 type MissionItemProps = {
+  missionId?: string;
   title?: string;
   rewardText?: string;
   difficulty?: string;
@@ -18,15 +22,36 @@ type MissionItemProps = {
   onPress?: () => void;
 };
 
+const DEFAULT_TITLE = "로컬 시장에서 간식 먹기";
+const DEFAULT_REWARD_TEXT = "사진 업로드 · 스탬프 1개";
+const DEFAULT_DIFFICULTY = "쉬움";
+
 export default function MissionItem({
-  title = "로컬 시장에서 간식 먹기",
-  rewardText = "사진 업로드 · 스탬프 1개",
-  difficulty = "쉬움",
+  missionId,
+  title,
+  rewardText,
+  difficulty,
   buttonTitle = "인증",
   imageSource,
   isCompleted = false,
   onPress,
 }: MissionItemProps) {
+  const accessToken = useAuthStore((state) => state.accessToken);
+
+  const { data: missionDetail } = useQuery({
+    queryKey: ["MISSION_DETAIL", missionId, accessToken],
+    queryFn: () => getMissionDetailItem(accessToken, missionId ?? ""),
+    enabled: Boolean(accessToken && missionId),
+    retry: false,
+  });
+
+  const resolvedTitle = missionDetail?.title ?? title ?? DEFAULT_TITLE;
+  const resolvedRewardText =
+    missionDetail
+      ? `${missionDetail.condition} · 스탬프 ${missionDetail.stamp_count}개`
+      : rewardText ?? DEFAULT_REWARD_TEXT;
+  const resolvedDifficulty = difficulty ?? DEFAULT_DIFFICULTY;
+
   return (
     <View className="w-full flex-row items-center gap-4 rounded-[18px] bg-white p-4">
       <View className="h-[72px] w-[72px] overflow-hidden rounded-[14px] bg-[#F0F0F0]">
@@ -49,19 +74,19 @@ export default function MissionItem({
             className="text-[17px] font-bold leading-6 text-gray-01"
             numberOfLines={1}
           >
-            {title}
+            {resolvedTitle}
           </Text>
           <Text
             className="text-[13px] leading-5 text-gray-02"
             numberOfLines={1}
           >
-            {rewardText}
+            {resolvedRewardText}
           </Text>
         </View>
 
         <View className="flex-row items-center justify-between gap-3">
           <Text className="rounded-full bg-main-light-orange px-2.5 py-1 text-[12px] font-bold text-main-green">
-            {isCompleted ? "완료" : difficulty}
+            {isCompleted ? "완료" : resolvedDifficulty}
           </Text>
 
           <Pressable
@@ -71,6 +96,14 @@ export default function MissionItem({
             onPress={() => {
               if (onPress) {
                 onPress();
+                return;
+              }
+
+              if (missionId) {
+                router.push({
+                  pathname: "/MissionDetail",
+                  params: { missionId },
+                });
                 return;
               }
 
