@@ -1,14 +1,15 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useMemo } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import Button from "../buttons/Button";
 
 type StampCouponProps = {
   title?: string;
   completedCount?: number;
   totalCount?: number;
   rewardText?: string;
-  buttonTitle?: string;
+  isMissionPage?: boolean;
   onPress?: () => void;
 };
 
@@ -19,7 +20,7 @@ export default function StampCoupon({
   completedCount = 8,
   totalCount = STAMP_TOTAL_COUNT,
   rewardText,
-  buttonTitle = "미션 보기",
+  isMissionPage = false,
   onPress,
 }: StampCouponProps) {
   const safeTotalCount = Math.min(Math.max(totalCount, 1), STAMP_TOTAL_COUNT);
@@ -88,22 +89,21 @@ export default function StampCoupon({
       <Text className="text-[15px] font-medium leading-5 text-main-orange">
         {safeCompletedCount}/{safeTotalCount} · {guideText}
       </Text>
+      {!isMissionPage && (
+        <Button
+          title="미션 보기"
+          size="large"
+          color="active"
+          onPress={() => {
+            if (onPress) {
+              onPress();
+              return;
+            }
 
-      <Pressable
-        className="h-[46px] items-center justify-center rounded-[16px] bg-main-orange"
-        onPress={() => {
-          if (onPress) {
-            onPress();
-            return;
-          }
-
-          router.push("/regionMissionList");
-        }}
-      >
-        <Text className="text-[16px] font-bold text-white">
-          {buttonTitle}
-        </Text>
-      </Pressable>
+            router.push("/regionMissionList");
+          }}
+        />
+      )}
     </View>
   );
 }

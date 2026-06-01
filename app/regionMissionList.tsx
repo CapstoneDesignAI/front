@@ -36,7 +36,7 @@ export default function RegionMissionListScreen() {
         </View>
 
         <View className="items-center gap-4">
-          <StampCoupon />
+          <StampCoupon isMissionPage={true} />
 
           <View className="w-full gap-3">
             <View className="flex-row items-center justify-between">

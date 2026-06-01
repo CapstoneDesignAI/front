@@ -1,7 +1,6 @@
 import EmblemItem from "@/components/history/EmblemItem";
 import ItemOptions, { HistoryOption } from "@/components/history/ItemOptions";
 import MissionItem from "@/components/history/MissionItem";
-import SmallEmblemItem from "@/components/history/SmallEmblemItem";
 import StampCoupon from "@/components/history/StampCoupon";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
@@ -76,9 +75,7 @@ function SavedTripCard({
             {title}
           </Text>
           <Text className="text-[13px] text-gray-03">{date}</Text>
-          <Text className="text-[14px] leading-5 text-gray-02">
-            {summary}
-          </Text>
+          <Text className="text-[14px] leading-5 text-gray-02">{summary}</Text>
         </View>
 
         <View className="h-11 w-11 items-center justify-center rounded-full bg-main-light-orange">
@@ -115,9 +112,7 @@ export default function HistoryScreen() {
     >
       <View className="gap-6">
         <View className="gap-3">
-          <Text className="text-[28px] font-black text-gray-01">
-            나의 여행
-          </Text>
+          <Text className="text-[28px] font-black text-gray-01">나의 여행</Text>
           <Text className="text-[15px] leading-6 text-gray-02">
             저장한 동선과 모은 스탬프, 엠블럼을 한눈에 확인해보세요.
           </Text>
@@ -127,6 +122,17 @@ export default function HistoryScreen() {
           selectedOption={selectedOption}
           onSelectOption={setSelectedOption}
         />
+        {showRoutes ? (
+          <View className="gap-3">
+            <SectionTitle
+              title="저장한 동선"
+              actionText={`${savedTrips.length}개`}
+            />
+            {savedTrips.map((trip) => (
+              <SavedTripCard key={trip.title} {...trip} />
+            ))}
+          </View>
+        ) : null}
 
         {showStamps ? (
           <View className="gap-3">
@@ -148,24 +154,12 @@ export default function HistoryScreen() {
           </View>
         ) : null}
 
-        {showRoutes ? (
-          <View className="gap-3">
-            <SectionTitle title="저장한 동선" actionText={`${savedTrips.length}개`} />
-            {savedTrips.map((trip) => (
-              <SavedTripCard key={trip.title} {...trip} />
-            ))}
-          </View>
-        ) : null}
-
         {showEmblems ? (
           <View className="gap-3">
-            <SectionTitle title="획득한 엠블럼" actionText="대표 엠블럼" />
-            <EmblemItem />
-
-            <View className="flex-row flex-wrap justify-between gap-y-4">
-              <SmallEmblemItem type="traveler" />
-              <SmallEmblemItem type="explorer" />
-            </View>
+            <SectionTitle title="획득한 엠블럼" actionText="3개" />
+            <EmblemItem type="master" />
+            <EmblemItem type="traveler" />
+            <EmblemItem type="explorer" />
           </View>
         ) : null}
       </View>

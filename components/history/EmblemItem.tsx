@@ -1,5 +1,5 @@
 import React from "react";
-import { Image, Pressable, Text, View } from "react-native";
+import { Image, Text, View } from "react-native";
 
 type EmblemType = "traveler" | "explorer" | "master";
 
@@ -31,7 +31,6 @@ const EMBLEMS = {
 export default function EmblemItem({
   type = "explorer",
   title,
-  label = "대표 엠블럼",
   completedMissionCount = 5,
   acquiredDate = "2026.05.30",
   buttonTitle = "공유하기",
@@ -51,7 +50,6 @@ export default function EmblemItem({
 
       <View className="min-w-0 flex-1 gap-2">
         <View className="gap-1">
-          <Text className="text-[14px] font-medium text-gray-02">{label}</Text>
           <Text
             className="text-[22px] font-black leading-7 text-gray-01"
             numberOfLines={1}
@@ -66,14 +64,14 @@ export default function EmblemItem({
           </Text>
         </View>
 
-        <Pressable
+        {/* <Pressable
           className="h-[36px] w-[112px] items-center justify-center rounded-full bg-[#FFEBE0]"
           onPress={onSharePress}
         >
           <Text className="text-[14px] font-bold text-main-orange">
             {buttonTitle}
           </Text>
-        </Pressable>
+        </Pressable> */}
       </View>
     </View>
   );
