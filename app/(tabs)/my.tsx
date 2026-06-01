@@ -2,6 +2,7 @@ import getUserProfile from "@/api/user/getUserProfile";
 import SmallEmblemItem from "@/components/history/SmallEmblemItem";
 import MyProfileCard from "@/components/my/MyProfileCard";
 import { useAuthStore } from "@/store/login/useAuthStore";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
@@ -29,7 +30,48 @@ const lockedEmblems = [
   },
 ];
 
-const menuItems = ["알림 설정", "이용 약관", "개인 정보수집"];
+const menuItems = [
+  {
+    title: "알림 설정",
+    icon: "bell-outline" as const,
+  },
+  {
+    title: "이용 약관",
+    icon: "file-document-outline" as const,
+  },
+  {
+    title: "개인 정보수집",
+    icon: "shield-account-outline" as const,
+  },
+];
+
+function MenuRow({
+  title,
+  icon,
+  isLast = false,
+}: {
+  title: string;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  isLast?: boolean;
+}) {
+  return (
+    <Pressable
+      className={`flex-row items-center gap-3 px-4 py-4 ${
+        isLast ? "" : "border-b border-gray-04"
+      }`}
+    >
+      <View className="h-9 w-9 items-center justify-center rounded-full bg-main-light-orange">
+        <MaterialCommunityIcons name={icon} size={20} color="#F08057" />
+      </View>
+
+      <View className="min-w-0 flex-1">
+        <Text className="text-[15px] font-bold text-gray-01">{title}</Text>
+      </View>
+
+      <MaterialCommunityIcons name="chevron-right" size={22} color="#A59A93" />
+    </Pressable>
+  );
+}
 
 export default function MyScreen() {
   const accessToken = useAuthStore((state) => state.accessToken);
@@ -87,23 +129,33 @@ export default function MyScreen() {
           </View>
         </View>
 
-        <View className="mt-1">
-          {menuItems.map((item) => (
-            <Pressable
-              key={item}
-              className="h-[46px] justify-center border-b border-gray-03"
-            >
-              <Text className="text-[14px] text-gray-01">{item}</Text>
+        <View className="gap-3">
+          <Text className="text-[18px] font-bold text-gray-01">설정</Text>
+
+          <View className="overflow-hidden rounded-[18px] bg-white">
+            {menuItems.map((item, index) => (
+              <MenuRow
+                key={item.title}
+                title={item.title}
+                icon={item.icon}
+                isLast={index === menuItems.length - 1}
+              />
+            ))}
+          </View>
+
+          <View className="flex-row gap-3">
+            <Pressable className="h-[46px] flex-1 items-center justify-center rounded-[16px] border border-gray-04 bg-background">
+              <Text className="text-[14px] font-bold text-gray-02">
+                로그아웃
+              </Text>
             </Pressable>
-          ))}
 
-          <Pressable className="h-[34px] justify-center">
-            <Text className="text-[13px] text-gray-01">로그아웃</Text>
-          </Pressable>
-
-          <Pressable className="h-[34px] justify-center">
-            <Text className="text-[13px] text-[#FF3B30]">회원 탈퇴</Text>
-          </Pressable>
+            <Pressable className="h-[46px] flex-1 items-center justify-center rounded-[16px] border border-gray-04 bg-background">
+              <Text className="text-[14px] font-medium text-gray-03">
+                회원 탈퇴
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </ScrollView>

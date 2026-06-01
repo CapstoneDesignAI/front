@@ -3,6 +3,7 @@ import ItemOptions, { HistoryOption } from "@/components/history/ItemOptions";
 import MissionItem from "@/components/history/MissionItem";
 import StampCoupon from "@/components/history/StampCoupon";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
@@ -21,12 +22,14 @@ const missions = [
 
 const savedTrips = [
   {
+    id: "gangneung-healing",
     title: "강릉 초당 감성 힐링 코스",
     date: "2026.05.30 저장",
     summary: "안목해변 카페거리 · 초당순두부마을 · 경포호",
     count: 3,
   },
   {
+    id: "danyang-local",
     title: "단양 로컬 산책 코스",
     date: "2026.05.28 저장",
     summary: "구경시장 · 수양개빛터널 · 도담삼봉",
@@ -54,18 +57,20 @@ function SectionTitle({
 }
 
 function SavedTripCard({
+  id,
   title,
   date,
   summary,
   count,
 }: {
+  id: string;
   title: string;
   date: string;
   summary: string;
   count: number;
 }) {
   return (
-    <Pressable className="rounded-[18px] bg-white p-5">
+    <View className="rounded-[18px] bg-white p-5">
       <View className="flex-row items-start justify-between gap-3">
         <View className="min-w-0 flex-1 gap-2">
           <Text
@@ -93,7 +98,21 @@ function SavedTripCard({
           {count}개 장소 동선
         </Text>
       </View>
-    </Pressable>
+
+      <Pressable
+        className="mt-4 h-[42px] items-center justify-center rounded-[14px] bg-main-light-orange"
+        onPress={() =>
+          router.push({
+            pathname: "/route-detail",
+            params: { id },
+          })
+        }
+      >
+        <Text className="text-[14px] font-bold text-main-orange">
+          동선 자세히 보기
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 
