@@ -88,6 +88,46 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen
+            name="regionMissionList"
+            options={{
+              title: "강원 고성 미션",
+              headerBackButtonDisplayMode: "minimal",
+              headerStyle: { backgroundColor: "#FFF8F3" },
+              headerTintColor: "#3A3A3A",
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="route-detail"
+            options={{
+              title: "동선 상세",
+              headerBackButtonDisplayMode: "minimal",
+              headerStyle: { backgroundColor: "#FFF8F3" },
+              headerTintColor: "#3A3A3A",
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="MissionDetail"
+            options={{
+              title: "미션 상세",
+              headerBackButtonDisplayMode: "minimal",
+              headerStyle: { backgroundColor: "#FFF8F3" },
+              headerTintColor: "#3A3A3A",
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="MissionVerification"
+            options={{
+              title: "미션 인증",
+              headerBackButtonDisplayMode: "minimal",
+              headerStyle: { backgroundColor: "#FFF8F3" },
+              headerTintColor: "#3A3A3A",
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
             name="modal"
             options={{ presentation: "modal", title: "Modal" }}
           />

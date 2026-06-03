@@ -12,6 +12,11 @@ const Palette = {
   main04: "#F6E6DC",
   main05: "#FFF8F3",
 
+  orange: "#F08057",
+  green: "#739E6B",
+  blue: "#7094AD",
+  "light-orange": "#F6E6DC",
+
   gray01: "#3A3A3A",
   gray02: "#6F6762",
   gray03: "#A59A93",
@@ -25,19 +30,19 @@ export const Colors = {
     ...Palette,
     text: Palette.gray01,
     background: Palette.background,
-    tint: Palette.main01,
+    tint: Palette.green,
     icon: Palette.gray03,
     tabIconDefault: Palette.gray03,
-    tabIconSelected: Palette.main01,
+    tabIconSelected: Palette.green,
   },
   dark: {
     ...Palette,
     text: Palette.main05,
     background: "#3A3A3A",
-    tint: Palette.main01,
+    tint: Palette.green,
     icon: Palette.gray03,
     tabIconDefault: Palette.gray04,
-    tabIconSelected: Palette.main01,
+    tabIconSelected: Palette.green,
   },
 };
 
