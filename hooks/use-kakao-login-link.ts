@@ -16,13 +16,15 @@ export function useKakaoLoginLink() {
     const parsed = Linking.parse(url);
     console.log("login redirect parsed:", parsed);
 
-    if (!parsed.path?.endsWith("login/success")) {
+    if (!isLoginSuccessRedirect(parsed.hostname, parsed.path)) {
       console.log("ignored login redirect path:", parsed.path);
       return false;
     }
 
-    const accessTokenParam = parsed.queryParams?.accessToken;
-    const refreshTokenParam = parsed.queryParams?.refreshToken;
+    const accessTokenParam =
+      parsed.queryParams?.accessToken ?? parsed.queryParams?.access_token;
+    const refreshTokenParam =
+      parsed.queryParams?.refreshToken ?? parsed.queryParams?.refresh_token;
     const accessToken = Array.isArray(accessTokenParam)
       ? accessTokenParam[0]
       : accessTokenParam;
@@ -53,10 +55,24 @@ export function useKakaoLoginLink() {
       accessToken: String(accessToken),
       refreshToken: String(refreshToken),
     });
-    router.replace("/(tabs)");
+    router.replace("/(tabs)/home");
 
     return true;
   }, []);
+}
+
+function isLoginSuccessRedirect(hostname: string | null, path: string | null) {
+  const normalizedPath = path?.replace(/^\/+/, "");
+  const normalizedHostname = hostname?.replace(/^\/+/, "");
+  const fullPath = [normalizedHostname, normalizedPath]
+    .filter(Boolean)
+    .join("/");
+
+  return (
+    normalizedPath === "login/success" ||
+    fullPath === "login/success" ||
+    fullPath.endsWith("/login/success")
+  );
 }
 
 function decodeJwtPayload(token: string): ServiceTokenPayload | null {

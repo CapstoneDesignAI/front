@@ -1,7 +1,18 @@
+import getRouteTransportation from "@/api/routes/getRouteTransportation";
 import Tag from "@/components/cards/Tag";
+import { useAuthStore } from "@/store/login/useAuthStore";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
-import React, { useMemo } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 
 const routeDetails: Record<string, IPostAIRecommendationResponse> = {
   "route-danyang-healing-half_day-walk-friends": {
@@ -11,8 +22,7 @@ const routeDetails: Record<string, IPostAIRecommendationResponse> = {
     sigungu: "단양군",
     theme_label: "힐링",
     contribution_score: 86,
-    ai_reason:
-      "짧은 이동 안에 전망, 산책, 로컬 소비를 균형 있게 배치했어요.",
+    ai_reason: "짧은 이동 안에 전망, 산책, 로컬 소비를 균형 있게 배치했어요.",
     total_distance_text: "약 12.4km",
     mobility: {
       level: "high",
@@ -57,7 +67,8 @@ const routeDetails: Record<string, IPostAIRecommendationResponse> = {
   },
 };
 
-const defaultRoute = routeDetails["route-danyang-healing-half_day-walk-friends"];
+const defaultRoute =
+  routeDetails["route-danyang-healing-half_day-walk-friends"];
 
 const getPlaceOrder = (place: IPlaceItem) =>
   place.order ?? place.visit_order ?? 0;
@@ -65,15 +76,291 @@ const getPlaceOrder = (place: IPlaceItem) =>
 const getPlaceDescription = (place: IPlaceItem) =>
   place.reason ?? place.description ?? "방문하기 좋은 추천 장소입니다.";
 
+const getTransportationItems = (
+  transportation?: IGetRouteTransportationResponse,
+) => {
+  if (!transportation) {
+    return [];
+  }
+
+  const knownItems =
+    transportation.items ?? transportation.segments ?? transportation.routes;
+
+  if (knownItems) {
+    return knownItems;
+  }
+
+  const arrayValue = Object.values(transportation).find(
+    (value): value is IRouteTransportationItem[] =>
+      Array.isArray(value) &&
+      value.every(
+        (item) =>
+          item &&
+          typeof item === "object" &&
+          "start" in item &&
+          "arrival" in item,
+      ),
+  );
+
+  return arrayValue ?? [];
+};
+
+const formatPayment = (payment?: number) => {
+  if (typeof payment !== "number") {
+    return null;
+  }
+
+  return `${payment.toLocaleString("ko-KR")}원`;
+};
+
+type TransportationBottomSheetProps = {
+  hasAccessToken: boolean;
+  isError: boolean;
+  isLoading: boolean;
+  items: IRouteTransportationItem[];
+  onClose: () => void;
+  transportation?: IGetRouteTransportationResponse;
+  visible: boolean;
+};
+
+function TransportationBottomSheet({
+  hasAccessToken,
+  isError,
+  isLoading,
+  items,
+  onClose,
+  transportation,
+  visible,
+}: TransportationBottomSheetProps) {
+  return (
+    <Modal
+      animationType="slide"
+      transparent
+      visible={visible}
+      onRequestClose={onClose}
+    >
+      <View className="flex-1 justify-end bg-black/35">
+        <Pressable className="flex-1" onPress={onClose} />
+        <View className="max-h-[78%] rounded-t-[28px] bg-background pb-6 shadow-xl">
+          <View className="items-center pb-2 pt-[10px]">
+            <View className="h-1 w-[42px] rounded-full bg-main-green" />
+          </View>
+
+          <View className="flex-row items-start justify-between px-6 pb-4">
+            <View className="min-w-0 flex-1 pr-4">
+              <Text className="text-[22px] font-black text-gray-01">
+                교통 및 이동 동선 안내
+              </Text>
+              <Text className="mt-[6px] text-[13px] leading-5 text-gray-02">
+                저장한 동선의 대중교통 이동 정보를 확인해요.
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              className="h-9 w-9 items-center justify-center rounded-full bg-white"
+              onPress={onClose}
+            >
+              <MaterialCommunityIcons name="close" size={21} color="#3A3A3A" />
+            </Pressable>
+          </View>
+
+          <ScrollView
+            className="flex-1"
+            contentContainerClassName="px-6 pb-8"
+            showsVerticalScrollIndicator={false}
+          >
+            <View className="rounded-[22px] border border-gray-04 bg-white px-[20px] py-[20px]">
+              {!hasAccessToken ? (
+                <View className="min-h-[148px] items-center justify-center">
+                  <MaterialCommunityIcons
+                    name="account-lock-outline"
+                    size={30}
+                    color="#A0A0A0"
+                  />
+                  <Text className="mt-[10px] text-[15px] font-bold text-gray-01">
+                    로그인이 필요해요
+                  </Text>
+                  <Text className="mt-[8px] text-center text-[12px] leading-4 text-gray-02">
+                    교통 안내를 확인하려면 다시 로그인해 주세요.
+                  </Text>
+                </View>
+              ) : isLoading ? (
+                <View className="min-h-[148px] items-center justify-center">
+                  <ActivityIndicator color="#739E6B" />
+                  <Text className="mt-[12px] text-[13px] font-medium text-gray-02">
+                    교통 정보를 불러오는 중이에요
+                  </Text>
+                </View>
+              ) : isError ? (
+                <View className="min-h-[148px] items-center justify-center">
+                  <Text className="text-[15px] font-bold text-gray-01">
+                    교통 정보를 불러오지 못했어요
+                  </Text>
+                  <Text className="mt-[8px] text-center text-[12px] leading-4 text-gray-02">
+                    잠시 후 다시 안내 버튼을 눌러 확인해 주세요.
+                  </Text>
+                </View>
+              ) : transportation?.available === false ? (
+                <View className="min-h-[148px] items-center justify-center">
+                  <MaterialCommunityIcons
+                    name="map-marker-off-outline"
+                    size={28}
+                    color="#A0A0A0"
+                  />
+                  <Text className="mt-[10px] text-[15px] font-bold text-gray-01">
+                    이용 가능한 교통 안내가 없어요
+                  </Text>
+                </View>
+              ) : (
+                <View>
+                  <View className="flex-row items-start justify-between gap-[12px]">
+                    <View className="min-w-0 flex-1">
+                      <Text className="text-[18px] font-black text-gray-01">
+                        {transportation?.title ?? "교통 안내"}
+                      </Text>
+                      <Text className="mt-[8px] text-[13px] leading-5 text-gray-02">
+                        {transportation?.summaryText ??
+                          "이 동선에 맞는 이동 정보를 확인해요."}
+                      </Text>
+                    </View>
+
+                    {transportation?.totalTimeText ? (
+                      <View className="rounded-[14px] bg-[#EEF4EA] px-[12px] py-[8px]">
+                        <Text className="text-[12px] font-bold text-main-green">
+                          {transportation.totalTimeText}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+
+                  {transportation?.firstStart || transportation?.lastArrival ? (
+                    <View className="mt-[18px] flex-row items-center rounded-[16px] bg-[#FFF8F3] px-[14px] py-[12px]">
+                      <Text
+                        className="min-w-0 flex-1 text-[13px] font-bold text-gray-01"
+                        numberOfLines={1}
+                      >
+                        {transportation.firstStart ?? "출발지"}
+                      </Text>
+                      <MaterialCommunityIcons
+                        name="arrow-right"
+                        size={18}
+                        color="#739E6B"
+                      />
+                      <Text
+                        className="min-w-0 flex-1 text-right text-[13px] font-bold text-gray-01"
+                        numberOfLines={1}
+                      >
+                        {transportation.lastArrival ?? "도착지"}
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  <View className="mt-[18px] gap-[12px]">
+                    {items.length > 0 ? (
+                      items.map((item, index) => {
+                        const paymentText = formatPayment(item.payment);
+
+                        return (
+                          <View
+                            key={`${item.start}-${item.arrival}-${index}`}
+                            className="rounded-[18px] border border-gray-04 bg-white px-[16px] py-[14px]"
+                          >
+                            <View className="flex-row items-center">
+                              <View className="h-[30px] w-[30px] items-center justify-center rounded-full bg-main-light-orange">
+                                <Text className="text-[13px] font-bold text-main-green">
+                                  {index + 1}
+                                </Text>
+                              </View>
+                              <View className="ml-[12px] min-w-0 flex-1">
+                                <Text
+                                  className="text-[14px] font-black text-gray-01"
+                                  numberOfLines={1}
+                                >
+                                  {item.start} → {item.arrival}
+                                </Text>
+                                {item.detailText ? (
+                                  <Text className="mt-[6px] text-[12px] leading-4 text-gray-02">
+                                    {item.detailText}
+                                  </Text>
+                                ) : null}
+                              </View>
+                            </View>
+
+                            <View className="mt-[12px] flex-row flex-wrap gap-[8px]">
+                              {item.transport ? (
+                                <Tag title={item.transport} tone="blue" />
+                              ) : null}
+                              {item.transferTimeText ? (
+                                <Tag
+                                  title={item.transferTimeText}
+                                  tone="orange"
+                                />
+                              ) : null}
+                              {typeof item.transferCount === "number" ? (
+                                <Tag
+                                  title={`환승 ${item.transferCount}회`}
+                                  tone="green"
+                                />
+                              ) : null}
+                              {paymentText ? (
+                                <Tag title={paymentText} tone="orange" />
+                              ) : null}
+                              {item.distance ? (
+                                <Tag title={item.distance} tone="green" />
+                              ) : null}
+                            </View>
+                          </View>
+                        );
+                      })
+                    ) : (
+                      <Text className="text-[13px] leading-5 text-gray-02">
+                        상세 이동 구간 정보가 아직 준비되지 않았어요.
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              )}
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export default function RouteDetailScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, source } = useLocalSearchParams<{
+    id?: string;
+    source?: "home" | "saved";
+  }>();
+  const { accessToken } = useAuthStore();
+  const [isTransportationSheetVisible, setIsTransportationSheetVisible] =
+    useState(false);
   const route = routeDetails[id ?? ""] ?? defaultRoute;
+  const routeId = route.route_id ?? id ?? "";
+  const isSavedRouteDetail = source === "saved";
 
   const places = useMemo(() => {
     return [...route.places].sort(
       (prev, next) => getPlaceOrder(prev) - getPlaceOrder(next),
     );
   }, [route.places]);
+
+  const {
+    data: transportation,
+    isLoading: isTransportationLoading,
+    isError: isTransportationError,
+  } = useQuery({
+    queryKey: ["ROUTE_TRANSPORTATION", routeId, accessToken],
+    queryFn: () => getRouteTransportation(accessToken, routeId),
+    enabled:
+      isSavedRouteDetail &&
+      isTransportationSheetVisible &&
+      Boolean(routeId) &&
+      Boolean(accessToken),
+  });
+
+  const transportationItems = getTransportationItems(transportation);
 
   return (
     <View className="flex-1 bg-background">
@@ -179,12 +466,34 @@ export default function RouteDetailScreen() {
       </ScrollView>
 
       <View className="absolute bottom-0 left-0 right-0 bg-background px-6 pb-6 pt-3">
-        <Pressable className="h-[48px] items-center justify-center rounded-[14px] bg-main-green">
-          <Text className="text-[15px] font-bold text-white">
-            이 동선 저장하기
-          </Text>
-        </Pressable>
+        {isSavedRouteDetail ? (
+          <Pressable
+            className="h-[48px] flex-row items-center justify-center rounded-[14px] bg-main-blue"
+            onPress={() => setIsTransportationSheetVisible(true)}
+          >
+            <MaterialCommunityIcons name="bus-clock" size={20} color="#FFFFFF" />
+            <Text className="ml-[8px] text-[15px] font-bold text-white">
+              교통 및 이동 동선 안내
+            </Text>
+          </Pressable>
+        ) : (
+          <Pressable className="h-[48px] items-center justify-center rounded-[14px] bg-main-green">
+            <Text className="text-[15px] font-bold text-white">
+              이 동선 저장하기
+            </Text>
+          </Pressable>
+        )}
       </View>
+
+      <TransportationBottomSheet
+        hasAccessToken={Boolean(accessToken)}
+        isError={isTransportationError}
+        isLoading={isTransportationLoading}
+        items={transportationItems}
+        onClose={() => setIsTransportationSheetVisible(false)}
+        transportation={transportation}
+        visible={isSavedRouteDetail && isTransportationSheetVisible}
+      />
     </View>
   );
 }
