@@ -1,122 +1,105 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
-import Button from "../buttons/Button";
+import Tag from "./Tag";
 
 type RecommendCardProps = {
   recommendation: IPostAIRecommendationResponse;
-  onBookmarkPress?: () => void;
-  onDislikePress?: () => void;
-  onPlacePress?: (place: IPlaceItem) => void;
+  onSavePress?: () => void;
 };
+
+const getPlaceOrder = (place: IPlaceItem) =>
+  place.order ?? place.visit_order ?? 0;
 
 export default function RecommendCard({
   recommendation,
-  onBookmarkPress,
-  onDislikePress,
-  onPlacePress,
+  onSavePress,
 }: RecommendCardProps) {
   const places = useMemo(() => {
     return [...recommendation.places].sort(
-      (prev, next) => prev.visit_order - next.visit_order,
+      (prev, next) => getPlaceOrder(prev) - getPlaceOrder(next),
     );
   }, [recommendation.places]);
 
+  const firstPlaceName = places[0]?.name;
+  const lastPlaceName = places[places.length - 1]?.name;
+  const routeDescription =
+    firstPlaceName && lastPlaceName
+      ? `${firstPlaceName}부터 ${lastPlaceName}까지 이어지는 로컬 동선`
+      : (recommendation.ai_reason ?? "AI가 고른 장소 순서대로 이어지는 추천 동선");
+  const routeId = recommendation.route_id ?? recommendation.title;
+
+  const handleViewRoute = () => {
+    router.push({
+      pathname: "/route-detail",
+      params: { id: routeId },
+    });
+  };
+
   return (
-    <View className="h-fit w-[360px] items-center gap-[14px] rounded-[24px] border border-gray-04 bg-background p-[20px] shadow-sm">
-      <View className="w-full gap-[8px]">
-        <View className="flex-row items-start justify-between gap-3">
-          <View className="flex-1">
-            <Text
-              className="text-[24px] font-bold text-gray-01"
-              numberOfLines={2}
-            >
-              {recommendation.title}
-            </Text>
-            <View className="mt-2 flex-row items-center gap-[4px]">
-              <MaterialCommunityIcons
-                name="clock-outline"
-                size={20}
-                color="#F29B7F"
-              />
-              <Text className="text-[18px] font-medium text-gray-01">
-                {recommendation.estimated_time}
-              </Text>
-            </View>
-          </View>
-          <View className="h-11 w-11 items-center justify-center rounded-full bg-main-light-orange">
-            <MaterialCommunityIcons name="routes" size={28} color="#7D9AAE" />
-          </View>
+    <View className="w-[340px] gap-[22px] rounded-[28px] border border-gray-04 bg-white px-[18px] pb-[18px] pt-[18px] shadow-sm">
+      <View className="relative h-[98px] w-full overflow-hidden rounded-[20px] bg-[#D6E8F0]">
+        <View className="absolute bottom-[-34px] left-[18px] h-[86px] w-[86px] rounded-full bg-white/25" />
+        <View className="absolute bottom-[-46px] right-[34px] h-[118px] w-[118px] rounded-full bg-white/20" />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="동선 저장"
+          className="absolute right-[22px] top-[20px] h-[32px] w-[32px] rounded-full bg-white"
+          onPress={onSavePress}
+        />
+      </View>
+
+      <View className="gap-[12px]">
+        <View className="flex-row flex-wrap gap-[8px]">
+          <Tag title="Theme" tone="green" variant="soft" size="medium" />
+          <Tag
+            title={recommendation.theme_label ?? "반나절"}
+            tone="orange"
+            variant="soft"
+            size="medium"
+          />
+          <Tag
+            title={recommendation.mobility?.recommended_transport ?? "도보"}
+            tone="blue"
+            variant="soft"
+            size="medium"
+          />
         </View>
-        <Text className="text-[12px] text-gray-02">
-          AI가 선택한 {places.length}개 장소를 순서대로 방문하는 추천 동선
-        </Text>
+
+        <View className="gap-[8px]">
+          <Text
+            className="text-[24px] font-black text-gray-01"
+            numberOfLines={1}
+          >
+            {recommendation.title}
+          </Text>
+          <Text className="text-[13px] leading-5 text-gray-02" numberOfLines={2}>
+            {routeDescription}
+          </Text>
+        </View>
+
+        <View className="self-start rounded-[18px] border border-[#E8D6BA] bg-background px-[18px] py-[10px]">
+          <Text className="text-[12px] font-bold text-main-green">
+            장소 {places.length}곳
+          </Text>
+        </View>
       </View>
 
-      <View className="w-full gap-[10px] rounded-[16px] bg-main-light-orange p-[14px]">
-        {places.map((place, index) => {
-          const isLast = index === places.length - 1;
-
-          return (
-            <Pressable
-              key={`${place.visit_order}-${place.name}`}
-              className="flex-row gap-[10px]"
-              disabled={!onPlacePress}
-              onPress={() => onPlacePress?.(place)}
-            >
-              <View className="items-center">
-                <View className="h-[26px] w-[26px] items-center justify-center rounded-full bg-main-green">
-                  <Text className="text-[12px] font-bold text-white">
-                    {place.visit_order}
-                  </Text>
-                </View>
-                {!isLast ? (
-                  <View className="min-h-[42px] w-[2px] flex-1 bg-main-green" />
-                ) : null}
-              </View>
-              <View className="flex-1 pb-[10px]">
-                <Text
-                  className="text-[15px] font-bold text-gray-01"
-                  numberOfLines={1}
-                >
-                  {place.name}
-                </Text>
-                <View className="mt-[3px] flex-row items-start gap-[3px]">
-                  <MaterialCommunityIcons
-                    name="map-marker"
-                    size={14}
-                    color="#F29B7F"
-                  />
-                  <Text className="flex-1 text-[12px] text-gray-02">
-                    {place.address}
-                  </Text>
-                </View>
-                <Text className="mt-[4px] text-[12px] leading-4 text-gray-02">
-                  {place.description}
-                </Text>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <View className="flex-row items-center">
-        <Button
-          title="맘에 들어요"
-          size="small"
-          color="gradient"
-          onPress={() => {
-            onDislikePress?.();
-          }}
-        />
-        <Button
-          title="별로예요"
-          size="small"
-          color="disabled"
-          onPress={() => {
-            onDislikePress?.();
-          }}
-        />
+      <View className="flex-row justify-between gap-[32px]">
+        <Pressable
+          accessibilityRole="button"
+          className="h-[42px] flex-1 items-center justify-center rounded-[14px] bg-main-green"
+          onPress={handleViewRoute}
+        >
+          <Text className="text-[15px] font-bold text-white">동선 보기</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          className="h-[42px] flex-1 items-center justify-center rounded-[14px] bg-main-orange"
+          onPress={onSavePress}
+        >
+          <Text className="text-[15px] font-bold text-white">저장</Text>
+        </Pressable>
       </View>
     </View>
   );

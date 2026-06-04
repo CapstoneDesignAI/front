@@ -9,24 +9,56 @@ import { ImageBackground, ScrollView, Text, View } from "react-native";
 const HOME_BACKGROUND = require("@/assets/images/home-background.png");
 
 const dummyData = {
-  title: "강릉 초당 감성 힐링 데이트 코스",
-  estimated_time: "약 6시간",
+  route_id: "route-danyang-healing-half_day-walk-friends",
+  title: "단양 감성 뷰 코스",
+  sido: "충청북도",
+  sigungu: "단양군",
+  theme_label: "반나절",
+  contribution_score: 86,
+  ai_reason:
+    "단양의 대표 자연 관광지와 지역 상권을 함께 경험할 수 있도록 구성했습니다.",
+  total_distance_text: "약 12.4km",
+  mobility: {
+    level: "high",
+    label: "이동 난이도 높음",
+    recommended_transport: "도보",
+  },
   places: [
     {
-      visit_order: 1,
-      name: "강릉 안목해변 카페거리",
-      address: "강원 강릉시 창해로 14",
-      description:
-        "바다 풍경을 바라보며 시원한 커피 한 잔으로 여행을 잔잔하게 시작합니다.",
+      order: 1,
+      place_id: "sample-dodamsambong",
+      name: "도담삼봉",
+      category: "자연",
+      address: "충북 단양군 매포읍 삼봉로 644",
+      lat: 36.984539,
+      lng: 128.369267,
+      stay_minutes: 50,
+      reason: "단양의 자연 경관을 먼저 체감할 수 있는 대표 장소입니다.",
     },
     {
-      visit_order: 2,
-      name: "초당순두부마을",
-      address: "강원 강릉시 초당동",
-      description: "점심식사로 자극적이지 않고 고소한 짬뽕순두부를 즐깁니다.",
+      order: 2,
+      place_id: "sample-danyang-market",
+      name: "단양구경시장",
+      category: "전통시장",
+      address: "충북 단양군 단양읍 도전5길 31",
+      lat: 36.982209,
+      lng: 128.365089,
+      stay_minutes: 60,
+      reason: "로컬 먹거리와 소비를 함께 경험할 수 있는 장소입니다.",
+    },
+    {
+      order: 3,
+      place_id: "sample-namhangang",
+      name: "남한강 잔도",
+      category: "산책",
+      address: "충북 단양군 적성면 애곡리",
+      lat: 36.964938,
+      lng: 128.382356,
+      stay_minutes: 45,
+      reason: "강변 풍경을 보며 산책하기 좋은 마무리 코스입니다.",
     },
   ],
-};
+} satisfies IPostAIRecommendationResponse;
 
 export default function HomeScreen() {
   const { isLogin } = useAuthStore();

@@ -46,14 +46,33 @@ interface IPostAIRecommendationRequest {
 }
 
 interface IPostAIRecommendationResponse {
+  route_id?: string;
   title: string;
-  estimated_time: string;
+  sido?: string;
+  sigungu?: string;
+  theme_label?: string;
+  contribution_score?: number;
+  ai_reason?: string;
+  total_distance_text?: string;
+  estimated_time?: string;
+  mobility?: {
+    level: "low" | "medium" | "high" | string;
+    label: string;
+    recommended_transport: string;
+  };
   places: IPlaceItem[];
 }
 
 interface IPlaceItem {
-  visit_order: number;
+  order?: number;
+  visit_order?: number;
+  place_id?: string;
   name: string;
+  category?: string;
   address: string;
-  description: string;
+  lat?: number;
+  lng?: number;
+  stay_minutes?: number;
+  reason?: string;
+  description?: string;
 }
