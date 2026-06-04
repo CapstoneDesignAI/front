@@ -76,3 +76,26 @@ interface IPlaceItem {
   reason?: string;
   description?: string;
 }
+
+interface IRouteTransportationItem {
+  start: string;
+  arrival: string;
+  transferTimeText?: string;
+  transferCount?: number;
+  payment?: number;
+  transport?: string;
+  distance?: string;
+  detailText?: string;
+}
+
+interface IGetRouteTransportationResponse {
+  available: boolean;
+  title?: string;
+  totalTimeText?: string;
+  summaryText?: string;
+  firstStart?: string;
+  lastArrival?: string;
+  items?: IRouteTransportationItem[];
+  segments?: IRouteTransportationItem[];
+  routes?: IRouteTransportationItem[];
+}

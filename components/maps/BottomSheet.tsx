@@ -58,15 +58,17 @@ export default function BottomSheet() {
   };
 
   const { data: bookmarkFolders, isLoading: isFoldersLoading } = useQuery({
-    queryKey: ["BOOKMARK_FOLDERS"],
+    queryKey: ["BOOKMARK_FOLDERS", accessToken],
     queryFn: () => getBookmarkFolders(accessToken),
     enabled: Boolean(accessToken),
   });
 
-  const folders = bookmarkFolders ?? [];
+  const folders = useMemo(() => bookmarkFolders ?? [], [bookmarkFolders]);
 
   const invalidateFolders = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["BOOKMARK_FOLDERS"] });
+    await queryClient.invalidateQueries({
+      queryKey: ["BOOKMARK_FOLDERS", accessToken],
+    });
   };
 
   const createFolderMutation = useMutation({

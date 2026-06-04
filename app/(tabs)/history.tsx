@@ -75,48 +75,74 @@ function SavedTripCard({
   count: number;
 }) {
   return (
-    <View className="rounded-[18px] bg-white p-5">
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="min-w-0 flex-1 gap-2">
-          <Text
-            className="text-[17px] font-bold leading-6 text-gray-01"
-            numberOfLines={1}
-          >
-            {title}
+    <View className="overflow-hidden rounded-[24px] border border-gray-04 bg-white shadow-sm">
+      <View className="relative h-[86px] bg-[#D6E8F0]">
+        <View className="absolute bottom-[-38px] left-[-8px] h-[96px] w-[96px] rounded-full bg-white/25" />
+        <View className="absolute right-[18px] top-[18px] h-[34px] w-[34px] items-center justify-center rounded-full bg-white">
+          <MaterialCommunityIcons name="routes" size={20} color="#739E6B" />
+        </View>
+        <View className="absolute bottom-[14px] left-[18px] flex-row items-center rounded-full bg-white/85 px-[12px] py-[6px]">
+          <MaterialCommunityIcons
+            name="map-marker-path"
+            size={15}
+            color="#F08057"
+          />
+          <Text className="ml-[5px] text-[12px] font-bold text-main-orange">
+            {count}개 장소
           </Text>
-          <Text className="text-[13px] text-gray-03">{date}</Text>
-          <Text className="text-[14px] leading-5 text-gray-02">{summary}</Text>
-        </View>
-
-        <View className="h-11 w-11 items-center justify-center rounded-full bg-main-light-orange">
-          <MaterialCommunityIcons name="routes" size={24} color="#739E6B" />
         </View>
       </View>
 
-      <View className="mt-4 flex-row items-center gap-2">
-        <MaterialCommunityIcons
-          name="map-marker-path"
-          size={18}
-          color="#F08057"
-        />
-        <Text className="text-[13px] font-medium text-main-orange">
-          {count}개 장소 동선
-        </Text>
-      </View>
+      <View className="gap-[16px] p-5">
+        <View className="gap-[8px]">
+          <View className="flex-row items-start justify-between gap-3">
+            <Text
+              className="min-w-0 flex-1 text-[19px] font-black leading-6 text-gray-01"
+              numberOfLines={1}
+            >
+              {title}
+            </Text>
+            <View className="rounded-full bg-main-light-orange px-[10px] py-[4px]">
+              <Text className="text-[11px] font-bold text-main-orange">
+                저장됨
+              </Text>
+            </View>
+          </View>
+          <Text className="text-[12px] font-medium text-gray-03">{date}</Text>
+          <Text className="text-[14px] leading-5 text-gray-02" numberOfLines={2}>
+            {summary}
+          </Text>
+        </View>
 
-      <Pressable
-        className="mt-4 h-[42px] items-center justify-center rounded-[14px] bg-main-light-orange"
-        onPress={() =>
-          router.push({
-            pathname: "/route-detail",
-            params: { id },
-          })
-        }
-      >
-        <Text className="text-[14px] font-bold text-main-orange">
-          동선 자세히 보기
-        </Text>
-      </Pressable>
+        <View className="h-px bg-gray-04" />
+
+        <View className="flex-row items-center justify-between gap-4">
+          <View className="min-w-0 flex-1 flex-row items-center">
+            <MaterialCommunityIcons
+              name="map-marker-outline"
+              size={18}
+              color="#739E6B"
+            />
+            <Text
+              className="ml-[5px] flex-1 text-[13px] font-medium text-gray-02"
+              numberOfLines={1}
+            >
+              이어서 볼 수 있는 추천 동선
+            </Text>
+          </View>
+          <Pressable
+            className="h-[38px] items-center justify-center rounded-full bg-main-green px-[18px]"
+            onPress={() =>
+              router.push({
+                pathname: "/route-detail",
+                params: { id, source: "saved" },
+              })
+            }
+          >
+            <Text className="text-[13px] font-bold text-white">상세 보기</Text>
+          </Pressable>
+        </View>
+      </View>
     </View>
   );
 }

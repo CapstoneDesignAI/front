@@ -26,18 +26,23 @@ export default function RecommendCard({
   const routeDescription =
     firstPlaceName && lastPlaceName
       ? `${firstPlaceName}부터 ${lastPlaceName}까지 이어지는 로컬 동선`
-      : (recommendation.ai_reason ?? "AI가 고른 장소 순서대로 이어지는 추천 동선");
+      : (recommendation.ai_reason ??
+        "AI가 고른 장소 순서대로 이어지는 추천 동선");
+  const routeSummary = places
+    .map((place) => place.category ?? place.name)
+    .slice(0, 3)
+    .join(" → ");
   const routeId = recommendation.route_id ?? recommendation.title;
 
   const handleViewRoute = () => {
     router.push({
       pathname: "/route-detail",
-      params: { id: routeId },
+      params: { id: routeId, source: "home" },
     });
   };
 
   return (
-    <View className="w-[340px] gap-[22px] rounded-[28px] border border-gray-04 bg-white px-[18px] pb-[18px] pt-[18px] shadow-sm">
+    <View className="w-full gap-[22px] rounded-[24px] border border-gray-04 bg-white px-[18px] pb-[18px] pt-[18px] shadow-sm">
       <View className="relative h-[98px] w-full overflow-hidden rounded-[20px] bg-[#D6E8F0]">
         <View className="absolute bottom-[-34px] left-[18px] h-[86px] w-[86px] rounded-full bg-white/25" />
         <View className="absolute bottom-[-46px] right-[34px] h-[118px] w-[118px] rounded-full bg-white/20" />
@@ -73,14 +78,25 @@ export default function RecommendCard({
           >
             {recommendation.title}
           </Text>
-          <Text className="text-[13px] leading-5 text-gray-02" numberOfLines={2}>
+          <Text
+            className="text-[13px] leading-5 text-gray-02"
+            numberOfLines={2}
+          >
             {routeDescription}
           </Text>
         </View>
 
-        <View className="self-start rounded-[18px] border border-[#E8D6BA] bg-background px-[18px] py-[10px]">
-          <Text className="text-[12px] font-bold text-main-green">
-            장소 {places.length}곳
+        <View className="flex-row items-center gap-[22px]">
+          <View className="rounded-[18px] border border-[#E8D6BA] bg-background px-[18px] py-[10px]">
+            <Text className="text-[12px] font-bold text-main-green">
+              장소 {places.length}곳
+            </Text>
+          </View>
+          <Text
+            className="min-w-0 flex-1 text-[13px] font-medium text-gray-02"
+            numberOfLines={1}
+          >
+            {routeSummary}
           </Text>
         </View>
       </View>

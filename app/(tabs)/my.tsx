@@ -1,9 +1,11 @@
 import getUserProfile from "@/api/user/getUserProfile";
+import postLogout from "@/api/login/postLogout";
 import getEmblems from "@/api/stampsAndEmblems/getEmblems";
 import SmallEmblemItem from "@/components/history/SmallEmblemItem";
 import MyProfileCard from "@/components/my/MyProfileCard";
 import { useAuthStore } from "@/store/login/useAuthStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
@@ -76,6 +78,8 @@ function MenuRow({
 
 export default function MyScreen() {
   const accessToken = useAuthStore((state) => state.accessToken);
+  const setLoginState = useAuthStore((state) => state.setLoginState);
+  const setUser = useAuthStore((state) => state.setUser);
 
   const { data: userProfile, isLoading } = useQuery({
     queryKey: ["USER_PROFILE", accessToken],
@@ -96,6 +100,16 @@ export default function MyScreen() {
     ? "불러오는 중..."
     : (userProfile?.nickName ?? "로그인이 필요합니다.");
   const visibleEmblems = emblems?.length ? emblems.slice(0, 4) : [];
+
+  const handleLogout = async () => {
+    try {
+      await postLogout(accessToken);
+    } finally {
+      setLoginState(false, "", "");
+      setUser(null);
+      router.replace("/");
+    }
+  };
 
   return (
     <ScrollView
@@ -164,7 +178,10 @@ export default function MyScreen() {
           </View>
 
           <View className="flex-row gap-3">
-            <Pressable className="h-[46px] flex-1 items-center justify-center rounded-[16px] border border-gray-04 bg-background">
+            <Pressable
+              className="h-[46px] flex-1 items-center justify-center rounded-[16px] border border-gray-04 bg-background"
+              onPress={handleLogout}
+            >
               <Text className="text-[14px] font-bold text-gray-02">
                 로그아웃
               </Text>
