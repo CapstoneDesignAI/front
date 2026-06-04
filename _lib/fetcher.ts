@@ -27,6 +27,58 @@ interface IDeleteOptions {
   authorization: string;
 }
 
+const parseResponseBody = async (response: Response) => {
+  const text = await response.text();
+
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+};
+
+const getErrorMessage = (data: unknown, fallback: string) => {
+  if (typeof data === "string") {
+    return data;
+  }
+
+  if (data && typeof data === "object") {
+    const errorData = data as {
+      detail?: unknown;
+      message?: unknown;
+      resultMsg?: unknown;
+    };
+
+    if (typeof errorData.resultMsg === "string") {
+      return errorData.resultMsg;
+    }
+
+    if (typeof errorData.message === "string") {
+      return errorData.message;
+    }
+
+    if (typeof errorData.detail === "string") {
+      return errorData.detail;
+    }
+
+    if (Array.isArray(errorData.detail)) {
+      return errorData.detail
+        .map((item) =>
+          item && typeof item === "object" && "msg" in item
+            ? String(item.msg)
+            : String(item),
+        )
+        .join("\n");
+    }
+  }
+
+  return fallback;
+};
+
 const postRefresh = async (refreshToken: string) => {
   const response = await fetch(
     `${process.env.EXPO_PUBLIC_API_BASE_URL}/users/token/refresh`,
@@ -137,10 +189,12 @@ const _fetch = async <T = unknown, R = unknown>({
           throw new Error("Session expired. Please log in again.");
         }
       }
-      const { resultMsg } = await res.json();
-      throw new Error(resultMsg);
+      const errorData = await parseResponseBody(res);
+      throw new Error(
+        getErrorMessage(errorData, `Request failed with status ${res.status}`),
+      );
     }
-    return await res.json();
+    return (await parseResponseBody(res)) as R;
   } catch (error) {
     throw error;
   }

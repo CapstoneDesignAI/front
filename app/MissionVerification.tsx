@@ -21,7 +21,8 @@ export default function MissionVerificationScreen() {
   const { missionId } = useLocalSearchParams<{
     missionId?: string;
   }>();
-  const { coords, errorMessage, isLoading, refresh } = useCurrentLocation();
+  const { coords, errorMessage, isLoading, label, refresh } =
+    useCurrentLocation();
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
 
   const { data: missionDetail } = useQuery({
@@ -37,6 +38,10 @@ export default function MissionVerificationScreen() {
         throw new Error("미션 인증에 필요한 정보가 부족합니다.");
       }
 
+      if (!selectedImageUri) {
+        throw new Error("미션 인증 사진을 먼저 업로드해 주세요.");
+      }
+
       console.log(
         missionId,
         coords.latitude,
@@ -45,10 +50,11 @@ export default function MissionVerificationScreen() {
       );
 
       return postMissionVerify(accessToken, missionId, {
-        mission_id: missionId,
         latitude: coords.latitude,
         longitude: coords.longitude,
-        image_url: selectedImageUri,
+        image: {
+          uri: selectedImageUri,
+        },
       });
     },
     onSuccess: async (response) => {
@@ -157,6 +163,24 @@ export default function MissionVerificationScreen() {
               {isLoading ? "확인 중" : coords ? "위치 확인 완료" : "확인하기"}
             </Text>
           </Pressable>
+
+          {coords ? (
+            <View className="gap-[8px] rounded-[16px] border border-gray-04 bg-background px-4 py-4">
+              <View className="flex-row items-center gap-[6px]">
+                <MaterialCommunityIcons
+                  name="map-marker-check-outline"
+                  size={18}
+                  color="#739E6B"
+                />
+                <Text className="text-[14px] font-bold text-main-green">
+                  가져온 위치
+                </Text>
+              </View>
+              <Text className="text-[13px] font-medium text-gray-01">
+                {label}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <View className="gap-5 rounded-[18px] bg-white px-5 py-5">
