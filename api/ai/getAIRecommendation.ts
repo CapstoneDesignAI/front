@@ -17,16 +17,12 @@ const unwrapAIRecommendation = (data: unknown): IPostAIRecommendationResponse =>
   return data as IPostAIRecommendationResponse;
 };
 
-export default async function postAIRecommendation(
+export default async function getAIRecommendation(
   authorization: string,
-  body: IPostAIRecommendationRequest,
+  routeId: string,
 ) {
-  const data = await api.post<
-    IPostAIRecommendationRequest,
-    unknown
-  >({
-    endpoint: `/ai-recommendations`,
-    body,
+  const data = await api.get<unknown>({
+    endpoint: `/ai-recommendations/${routeId}`,
     authorization,
   });
 

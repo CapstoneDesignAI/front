@@ -63,6 +63,23 @@ interface IPostAIRecommendationResponse {
   places: IPlaceItem[];
 }
 
+type IRouteRecommendation = IPostAIRecommendationResponse & {
+  id?: string;
+  saved_at?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+interface ISaveRouteFromRecommendationRequest {
+  route_id: string;
+}
+
+interface ISaveRouteFromRecommendationResponse {
+  route_id?: string;
+  id?: string;
+  message?: string;
+}
+
 interface IPlaceItem {
   order?: number;
   visit_order?: number;

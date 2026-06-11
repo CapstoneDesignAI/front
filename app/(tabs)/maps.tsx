@@ -1,4 +1,4 @@
-import { Platform, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { WebView } from "react-native-webview";
 
 import BottomSheet from "@/components/maps/BottomSheet";
@@ -6,10 +6,7 @@ import { ThemedView } from "@/components/themed-view";
 
 const kakaoMapWebUrl =
   process.env.EXPO_PUBLIC_KAKAO_MAP_URL ??
-  Platform.select({
-    android: "http://10.0.2.2:5173",
-    default: "http://localhost:5173",
-  });
+  "https://capstone-kakao-map.vercel.app/";
 
 export default function MapsScreen() {
   return (

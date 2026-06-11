@@ -1,3 +1,5 @@
+import deleteRoute from "@/api/routes/deleteRoute";
+import getRoutes from "@/api/routes/getRoutes";
 import getEmblems from "@/api/stampsAndEmblems/getEmblems";
 import EmblemItem from "@/components/history/EmblemItem";
 import ItemOptions, { HistoryOption } from "@/components/history/ItemOptions";
@@ -5,10 +7,17 @@ import MissionItem from "@/components/history/MissionItem";
 import StampCoupon from "@/components/history/StampCoupon";
 import { useAuthStore } from "@/store/login/useAuthStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 
 const DEFAULT_REGION_ID = "1";
 
@@ -25,22 +34,34 @@ const missions = [
   },
 ];
 
-const savedTrips = [
-  {
-    id: "gangneung-healing",
-    title: "강릉 초당 감성 힐링 코스",
-    date: "2026.05.30 저장",
-    summary: "안목해변 카페거리 · 초당순두부마을 · 경포호",
-    count: 3,
-  },
-  {
-    id: "danyang-local",
-    title: "단양 로컬 산책 코스",
-    date: "2026.05.28 저장",
-    summary: "구경시장 · 수양개빛터널 · 도담삼봉",
-    count: 3,
-  },
-];
+const formatSavedDate = (date?: string) => {
+  if (!date) {
+    return "저장됨";
+  }
+
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "저장됨";
+  }
+
+  return `${parsedDate
+    .toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+    .replace(/\.$/, "")} 저장`;
+};
+
+const getRouteId = (route: IRouteRecommendation) =>
+  route.route_id ?? route.id ?? route.title;
+
+const getRouteSummary = (route: IRouteRecommendation) =>
+  route.places
+    ?.map((place) => place.name)
+    .slice(0, 4)
+    .join(" · ") || "저장한 추천 동선";
 
 function SectionTitle({
   title,
@@ -67,12 +88,14 @@ function SavedTripCard({
   date,
   summary,
   count,
+  onDelete,
 }: {
   id: string;
   title: string;
   date: string;
   summary: string;
   count: number;
+  onDelete: () => void;
 }) {
   return (
     <View className="overflow-hidden rounded-[24px] border border-gray-04 bg-white shadow-sm">
@@ -116,7 +139,7 @@ function SavedTripCard({
 
         <View className="h-px bg-gray-04" />
 
-        <View className="flex-row items-center justify-between gap-4">
+        <View className="flex-row items-center justify-between gap-3">
           <View className="min-w-0 flex-1 flex-row items-center">
             <MaterialCommunityIcons
               name="map-marker-outline"
@@ -131,7 +154,17 @@ function SavedTripCard({
             </Text>
           </View>
           <Pressable
-            className="h-[38px] items-center justify-center rounded-full bg-main-green px-[18px]"
+            className="h-[38px] w-[38px] items-center justify-center rounded-full border border-gray-04"
+            onPress={onDelete}
+          >
+            <MaterialCommunityIcons
+              name="trash-can-outline"
+              size={18}
+              color="#A0A0A0"
+            />
+          </Pressable>
+          <Pressable
+            className="h-[38px] items-center justify-center rounded-full bg-main-green px-[14px]"
             onPress={() =>
               router.push({
                 pathname: "/route-detail",
@@ -150,12 +183,40 @@ function SavedTripCard({
 export default function HistoryScreen() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const [selectedOption, setSelectedOption] = useState<HistoryOption>("전체");
+  const queryClient = useQueryClient();
 
   const { data: emblems } = useQuery({
     queryKey: ["EMBLEMS", accessToken],
     queryFn: () => getEmblems(accessToken),
     enabled: Boolean(accessToken),
     retry: false,
+  });
+
+  const {
+    data: savedRoutes = [],
+    isError: isSavedRoutesError,
+    isLoading: isSavedRoutesLoading,
+  } = useQuery({
+    queryKey: ["SAVED_ROUTES", accessToken],
+    queryFn: () => getRoutes(accessToken),
+    enabled: Boolean(accessToken),
+    retry: false,
+  });
+
+  const { mutate: removeRoute } = useMutation({
+    mutationFn: (routeId: string) => deleteRoute(accessToken, routeId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["SAVED_ROUTES"] });
+      Alert.alert("삭제 완료", "저장한 동선을 삭제했어요.");
+    },
+    onError: (error) => {
+      Alert.alert(
+        "삭제 실패",
+        error instanceof Error
+          ? error.message
+          : "저장한 동선을 삭제하지 못했어요.",
+      );
+    },
   });
 
   const showRoutes = selectedOption === "전체" || selectedOption === "동선";
@@ -185,11 +246,56 @@ export default function HistoryScreen() {
           <View className="gap-3">
             <SectionTitle
               title="저장한 동선"
-              actionText={`${savedTrips.length}개`}
+              actionText={`${savedRoutes.length}개`}
             />
-            {savedTrips.map((trip) => (
-              <SavedTripCard key={trip.title} {...trip} />
-            ))}
+            {!accessToken ? (
+              <View className="min-h-[132px] items-center justify-center rounded-[22px] border border-gray-04 bg-white px-5">
+                <Text className="text-[15px] font-bold text-gray-01">
+                  로그인이 필요해요
+                </Text>
+                <Text className="mt-2 text-center text-[13px] leading-5 text-gray-02">
+                  저장한 동선을 보려면 다시 로그인해 주세요.
+                </Text>
+              </View>
+            ) : isSavedRoutesLoading ? (
+              <View className="min-h-[132px] items-center justify-center rounded-[22px] border border-gray-04 bg-white">
+                <ActivityIndicator color="#739E6B" />
+                <Text className="mt-3 text-[13px] font-medium text-gray-02">
+                  저장한 동선을 불러오는 중이에요
+                </Text>
+              </View>
+            ) : isSavedRoutesError ? (
+              <View className="min-h-[132px] items-center justify-center rounded-[22px] border border-gray-04 bg-white px-5">
+                <Text className="text-[15px] font-bold text-gray-01">
+                  동선을 불러오지 못했어요
+                </Text>
+              </View>
+            ) : savedRoutes.length ? (
+              savedRoutes.map((route) => {
+                const id = getRouteId(route);
+
+                return (
+                  <SavedTripCard
+                    key={id}
+                    id={id}
+                    title={route.title}
+                    date={formatSavedDate(route.saved_at ?? route.created_at)}
+                    summary={getRouteSummary(route)}
+                    count={route.places?.length ?? 0}
+                    onDelete={() => removeRoute(id)}
+                  />
+                );
+              })
+            ) : (
+              <View className="min-h-[132px] items-center justify-center rounded-[22px] border border-gray-04 bg-white px-5">
+                <Text className="text-[15px] font-bold text-gray-01">
+                  저장한 동선이 없어요
+                </Text>
+                <Text className="mt-2 text-center text-[13px] leading-5 text-gray-02">
+                  추천 상세에서 마음에 드는 동선을 저장해 보세요.
+                </Text>
+              </View>
+            )}
           </View>
         ) : null}
 

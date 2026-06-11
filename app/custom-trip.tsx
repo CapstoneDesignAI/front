@@ -1,10 +1,18 @@
 import postAIRecommendation from "@/api/ai/postAIRecommendation";
 import Button from "@/components/buttons/Button";
+import RecommendCard from "@/components/cards/RecommendCard";
 import { useAuthStore } from "@/store/login/useAuthStore";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 
 type StepKey =
   | "duration"
@@ -130,6 +138,8 @@ export default function CustomTripScreen() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Partial<Record<StepKey, string>>>({});
   const [AIrequest, setAIRequest] = useState<IPostAIRecommendationRequest>();
+  const [recommendation, setRecommendation] =
+    useState<IPostAIRecommendationResponse | null>(null);
 
   const currentStep = steps[currentStepIndex];
   const selectedAnswer = answers[currentStep.key];
@@ -141,25 +151,31 @@ export default function CustomTripScreen() {
 
   const queryClient = useQueryClient();
 
-  const { mutate: AIRecommendation } = useMutation({
-    mutationFn: async (data: IPostAIRecommendationRequest) => {
-      const response = await postAIRecommendation(accessToken, data);
-      return response;
-    },
-    onSuccess: async (response) => {
-      await queryClient.invalidateQueries({ queryKey: ["AI_RECOMMENDATION"] });
-      Alert.alert("추천 완료", response.title);
-    },
-    onError: (error) => {
-      console.error(error.message);
-      Alert.alert(
-        "추천 요청 실패",
-        error instanceof Error
-          ? error.message
-          : "AI 추천을 가져오지 못했습니다.",
-      );
-    },
-  });
+  const { mutate: AIRecommendation, isPending: isRecommendationPending } =
+    useMutation({
+      mutationFn: async (data: IPostAIRecommendationRequest) => {
+        const response = await postAIRecommendation(accessToken, data);
+        return response;
+      },
+      onSuccess: async (response) => {
+        setRecommendation(response);
+        await queryClient.invalidateQueries({
+          queryKey: ["AI_RECOMMENDATION"],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["TODAY_RECOMMENDATION"],
+        });
+      },
+      onError: (error) => {
+        console.error(error.message);
+        Alert.alert(
+          "추천 요청 실패",
+          error instanceof Error
+            ? error.message
+            : "AI 추천을 가져오지 못했습니다.",
+        );
+      },
+    });
 
   const handleSelectAnswer = (answer: string) => {
     if (answers[currentStep.key] === answer) {
@@ -175,6 +191,10 @@ export default function CustomTripScreen() {
   };
 
   const goNext = async () => {
+    if (isRecommendationPending) {
+      return;
+    }
+
     if (!selectedAnswer && !currentStep.optional) {
       return;
     }
@@ -243,6 +263,20 @@ export default function CustomTripScreen() {
           </View>
         </View>
 
+        {recommendation ? (
+          <View className="mb-8 gap-4">
+            <View className="gap-2">
+              <Text className="text-[26px] font-black text-gray-01">
+                추천 동선이 준비됐어요
+              </Text>
+              <Text className="text-[14px] leading-5 text-gray-02">
+                상세 보기에서 장소별 이유를 보고, 마음에 들면 동선으로 저장해요.
+              </Text>
+            </View>
+            <RecommendCard recommendation={recommendation} source="ai" />
+          </View>
+        ) : null}
+
         <View className="flex-1 gap-7">
           <View className="gap-2">
             <View className="flex-row items-center gap-2">
@@ -300,15 +334,33 @@ export default function CustomTripScreen() {
           </Pressable>
           <Button
             title={
-              isLastStep ? (AIrequest ? "다시 추천 받기" : "추천 받기") : "다음"
+              isLastStep
+                ? isRecommendationPending
+                  ? "추천 받는 중"
+                  : AIrequest
+                    ? "다시 추천 받기"
+                    : "추천 받기"
+                : "다음"
             }
             size="small"
             color={
-              selectedAnswer || currentStep.optional ? "gradient" : "disabled"
+              (selectedAnswer || currentStep.optional) &&
+              !isRecommendationPending
+                ? "gradient"
+                : "disabled"
             }
             onPress={goNext}
           />
         </View>
+
+        {isRecommendationPending ? (
+          <View className="mt-5 items-center">
+            <ActivityIndicator color="#739E6B" />
+            <Text className="mt-2 text-[13px] font-medium text-gray-02">
+              취향에 맞는 동선을 고르는 중이에요
+            </Text>
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );

@@ -1,61 +1,31 @@
+import getTodayRecommendation from "@/api/recommendations/getTodayRecommendation";
 import RecommendCard from "@/components/cards/RecommendCard";
+import { useAuthStore } from "@/store/login/useAuthStore";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-
-const dummyData = {
-  route_id: "route-danyang-healing-half_day-walk-friends",
-  title: "단양 감성 뷰 코스",
-  sido: "충청북도",
-  sigungu: "단양군",
-  theme_label: "반나절",
-  contribution_score: 86,
-  ai_reason:
-    "단양의 대표 자연 관광지와 지역 상권을 함께 경험할 수 있도록 구성했습니다.",
-  total_distance_text: "약 12.4km",
-  mobility: {
-    level: "high",
-    label: "이동 난이도 높음",
-    recommended_transport: "도보",
-  },
-  places: [
-    {
-      order: 1,
-      place_id: "sample-dodamsambong",
-      name: "도담삼봉",
-      category: "자연",
-      address: "충북 단양군 매포읍 삼봉로 644",
-      lat: 36.984539,
-      lng: 128.369267,
-      stay_minutes: 50,
-      reason: "단양의 자연 경관을 먼저 체감할 수 있는 대표 장소입니다.",
-    },
-    {
-      order: 2,
-      place_id: "sample-danyang-market",
-      name: "단양구경시장",
-      category: "전통시장",
-      address: "충북 단양군 단양읍 도전5길 31",
-      lat: 36.982209,
-      lng: 128.365089,
-      stay_minutes: 60,
-      reason: "로컬 먹거리와 소비를 함께 경험할 수 있는 장소입니다.",
-    },
-    {
-      order: 3,
-      place_id: "sample-namhangang",
-      name: "남한강 잔도",
-      category: "산책",
-      address: "충북 단양군 적성면 애곡리",
-      lat: 36.964938,
-      lng: 128.382356,
-      stay_minutes: 45,
-      reason: "강변 풍경을 보며 산책하기 좋은 마무리 코스입니다.",
-    },
-  ],
-} satisfies IPostAIRecommendationResponse;
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 
 export default function HomeScreen() {
+  const accessToken = useAuthStore((state) => state.accessToken);
+
+  const {
+    data: todayRecommendation,
+    isError: isTodayRecommendationError,
+    isLoading: isTodayRecommendationLoading,
+  } = useQuery({
+    queryKey: ["TODAY_RECOMMENDATION", accessToken],
+    queryFn: () => getTodayRecommendation(accessToken),
+    enabled: Boolean(accessToken),
+    retry: false,
+  });
+
   return (
     <View className="flex-1 bg-background">
       <ScrollView
@@ -85,31 +55,66 @@ export default function HomeScreen() {
             오늘의 추천 여행
           </Text>
 
-          <View>
-            <RecommendCard recommendation={dummyData} />
-
-            <View className="z-10 -mb-[2px] -mt-[1px] h-[28px] items-center justify-center">
-              <View className="absolute h-[28px] w-[6px] rounded-full bg-[#D6E8F0]" />
-              <View className="absolute top-[2px] h-[11px] w-[11px] rounded-full border-[2px] border-white bg-[#D6E8F0]" />
-              <View className="absolute bottom-[2px] h-[11px] w-[11px] rounded-full border-[2px] border-white bg-[#D6E8F0]" />
+          {!accessToken ? (
+            <View className="min-h-[180px] items-center justify-center rounded-[22px] border border-gray-04 bg-white px-5">
+              <Text className="text-[16px] font-bold text-gray-01">
+                로그인이 필요해요
+              </Text>
+              <Text className="mt-2 text-center text-[13px] leading-5 text-gray-02">
+                오늘의 추천 여행을 보려면 다시 로그인해 주세요.
+              </Text>
             </View>
+          ) : isTodayRecommendationLoading ? (
+            <View className="min-h-[180px] items-center justify-center rounded-[22px] border border-gray-04 bg-white">
+              <ActivityIndicator color="#739E6B" />
+              <Text className="mt-3 text-[13px] font-medium text-gray-02">
+                오늘의 추천을 불러오는 중이에요
+              </Text>
+            </View>
+          ) : isTodayRecommendationError ? (
+            <View className="min-h-[180px] items-center justify-center rounded-[22px] border border-gray-04 bg-white px-5">
+              <Text className="text-[16px] font-bold text-gray-01">
+                추천을 불러오지 못했어요
+              </Text>
+              <Text className="mt-2 text-center text-[13px] leading-5 text-gray-02">
+                잠시 후 홈 화면을 다시 열어 확인해 주세요.
+              </Text>
+            </View>
+          ) : todayRecommendation ? (
+            <View>
+              <RecommendCard recommendation={todayRecommendation} />
 
-            <View className="mx-[14px] rounded-[22px] border border-[#D9E3D3] bg-[#FDFFFB] px-5 py-[18px]">
-              <View className="flex-row items-center gap-[8px]">
-                <View className="h-[8px] w-[8px] rounded-full bg-main-green" />
-                <Text className="text-[13px] font-bold text-main-green">
-                  오늘의 추천 포인트
+              <View className="z-10 -mb-[2px] -mt-[1px] h-[28px] items-center justify-center">
+                <View className="absolute h-[28px] w-[6px] rounded-full bg-[#D6E8F0]" />
+                <View className="absolute top-[2px] h-[11px] w-[11px] rounded-full border-[2px] border-white bg-[#D6E8F0]" />
+                <View className="absolute bottom-[2px] h-[11px] w-[11px] rounded-full border-[2px] border-white bg-[#D6E8F0]" />
+              </View>
+
+              <View className="mx-[14px] rounded-[22px] border border-[#D9E3D3] bg-[#FDFFFB] px-5 py-[18px]">
+                <View className="flex-row items-center gap-[8px]">
+                  <View className="h-[8px] w-[8px] rounded-full bg-main-green" />
+                  <Text className="text-[13px] font-bold text-main-green">
+                    오늘의 추천 포인트
+                  </Text>
+                </View>
+                <Text className="mt-[8px] text-[15px] font-medium leading-6 text-gray-01">
+                  {todayRecommendation.ai_reason ??
+                    "오늘 떠나기 좋은 장소를 자연스럽게 이어봤어요."}
+                </Text>
+                <Text className="mt-[6px] text-[12px] leading-5 text-gray-02">
+                  {todayRecommendation.total_distance_text ??
+                    todayRecommendation.estimated_time ??
+                    "장소 순서대로 부담 없이 따라갈 수 있는 코스예요."}
                 </Text>
               </View>
-              <Text className="mt-[8px] text-[15px] font-medium leading-6 text-gray-01">
-                {dummyData.ai_reason}
-              </Text>
-              <Text className="mt-[6px] text-[12px] leading-5 text-gray-02">
-                자연 전망, 로컬 시장, 강변 산책이 이어지는 부담 없는 반나절
-                코스예요.
+            </View>
+          ) : (
+            <View className="min-h-[180px] items-center justify-center rounded-[22px] border border-gray-04 bg-white px-5">
+              <Text className="text-[16px] font-bold text-gray-01">
+                오늘 추천할 동선이 아직 없어요
               </Text>
             </View>
-          </View>
+          )}
         </View>
       </ScrollView>
     </View>

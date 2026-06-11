@@ -18,10 +18,13 @@ type IGetMissionItemResponse = {
 type IGetMissionListResponse = IGetMissionItemResponse[];
 
 type IPostMissionVerifyRequest = {
-  mission_id: string;
   latitude: number;
   longitude: number;
-  image_url: string | null;
+  image: {
+    uri: string;
+    name?: string | null;
+    type?: string | null;
+  };
 };
 
 type IPostMissionVerifyResponse = {

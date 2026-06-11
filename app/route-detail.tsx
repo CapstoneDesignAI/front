@@ -1,74 +1,22 @@
+import getAIRecommendation from "@/api/ai/getAIRecommendation";
+import getRoute from "@/api/routes/getRoute";
 import getRouteTransportation from "@/api/routes/getRouteTransportation";
+import postRouteFromRecommendation from "@/api/routes/postRouteFromRecommendation";
 import Tag from "@/components/cards/Tag";
 import { useAuthStore } from "@/store/login/useAuthStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
-
-const routeDetails: Record<string, IPostAIRecommendationResponse> = {
-  "route-danyang-healing-half_day-walk-friends": {
-    route_id: "route-danyang-healing-half_day-walk-friends",
-    title: "단양 감성 뷰 코스",
-    sido: "충청북도",
-    sigungu: "단양군",
-    theme_label: "힐링",
-    contribution_score: 86,
-    ai_reason: "짧은 이동 안에 전망, 산책, 로컬 소비를 균형 있게 배치했어요.",
-    total_distance_text: "약 12.4km",
-    mobility: {
-      level: "high",
-      label: "이동 난이도 높음",
-      recommended_transport: "뚜벅이",
-    },
-    places: [
-      {
-        order: 1,
-        place_id: "sample-danyang-market",
-        name: "단양구경시장",
-        category: "전통시장",
-        address: "충북 단양군 단양읍 도전5길 31",
-        lat: 36.982209,
-        lng: 128.365089,
-        stay_minutes: 60,
-        reason: "로컬 먹거리와 시장 골목을 함께 즐기기 좋은 곳",
-      },
-      {
-        order: 2,
-        place_id: "sample-dodamsambong",
-        name: "도담삼봉",
-        category: "자연",
-        address: "충북 단양군 매포읍 삼봉로 644",
-        lat: 36.984539,
-        lng: 128.369267,
-        stay_minutes: 50,
-        reason: "단양의 자연 경관을 먼저 체감할 수 있는 대표 장소입니다.",
-      },
-      {
-        order: 3,
-        place_id: "sample-namhangang",
-        name: "남한강 잔도",
-        category: "산책",
-        address: "충북 단양군 적성면 애곡리",
-        lat: 36.964938,
-        lng: 128.382356,
-        stay_minutes: 45,
-        reason: "강변 풍경을 보며 산책하기 좋은 마무리 코스입니다.",
-      },
-    ],
-  },
-};
-
-const defaultRoute =
-  routeDetails["route-danyang-healing-half_day-walk-friends"];
 
 const getPlaceOrder = (place: IPlaceItem) =>
   place.order ?? place.visit_order ?? 0;
@@ -331,20 +279,52 @@ function TransportationBottomSheet({
 export default function RouteDetailScreen() {
   const { id, source } = useLocalSearchParams<{
     id?: string;
-    source?: "home" | "saved";
+    source?: "home" | "ai" | "saved";
   }>();
   const { accessToken } = useAuthStore();
+  const queryClient = useQueryClient();
   const [isTransportationSheetVisible, setIsTransportationSheetVisible] =
     useState(false);
-  const route = routeDetails[id ?? ""] ?? defaultRoute;
-  const routeId = route.route_id ?? id ?? "";
   const isSavedRouteDetail = source === "saved";
+  const routeId = id ?? "";
+
+  const {
+    data: route,
+    isError: isRouteError,
+    isLoading: isRouteLoading,
+  } = useQuery({
+    queryKey: [
+      isSavedRouteDetail ? "SAVED_ROUTE_DETAIL" : "AI_RECOMMENDATION_DETAIL",
+      routeId,
+      accessToken,
+    ],
+    queryFn: () =>
+      isSavedRouteDetail
+        ? getRoute(accessToken, routeId)
+        : getAIRecommendation(accessToken, routeId),
+    enabled: Boolean(routeId) && Boolean(accessToken),
+    retry: false,
+  });
+
+  const { mutate: saveRoute, isPending: isSaveRoutePending } = useMutation({
+    mutationFn: () => postRouteFromRecommendation(accessToken, routeId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["SAVED_ROUTES"] });
+      Alert.alert("저장 완료", "내 동선에서 다시 볼 수 있어요.");
+    },
+    onError: (error) => {
+      Alert.alert(
+        "저장 실패",
+        error instanceof Error ? error.message : "동선을 저장하지 못했어요.",
+      );
+    },
+  });
 
   const places = useMemo(() => {
-    return [...route.places].sort(
+    return [...(route?.places ?? [])].sort(
       (prev, next) => getPlaceOrder(prev) - getPlaceOrder(next),
     );
-  }, [route.places]);
+  }, [route?.places]);
 
   const {
     data: transportation,
@@ -361,6 +341,43 @@ export default function RouteDetailScreen() {
   });
 
   const transportationItems = getTransportationItems(transportation);
+
+  if (!accessToken) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background px-6">
+        <Text className="text-[18px] font-black text-gray-01">
+          로그인이 필요해요
+        </Text>
+        <Text className="mt-2 text-center text-[13px] leading-5 text-gray-02">
+          동선 상세를 보려면 다시 로그인해 주세요.
+        </Text>
+      </View>
+    );
+  }
+
+  if (isRouteLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator color="#739E6B" />
+        <Text className="mt-3 text-[13px] font-medium text-gray-02">
+          동선 상세를 불러오는 중이에요
+        </Text>
+      </View>
+    );
+  }
+
+  if (isRouteError || !route) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background px-6">
+        <Text className="text-[18px] font-black text-gray-01">
+          동선을 불러오지 못했어요
+        </Text>
+        <Text className="mt-2 text-center text-[13px] leading-5 text-gray-02">
+          목록에서 다시 상세 보기를 눌러 주세요.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-background">
@@ -387,7 +404,9 @@ export default function RouteDetailScreen() {
               {route.title}
             </Text>
             <Text className="mt-[8px] text-[13px] font-medium leading-5 text-white">
-              남한강 전망과 로컬 소비를 함께 담은 반나절 코스
+              {route.total_distance_text ??
+                route.estimated_time ??
+                "AI가 고른 장소 순서대로 이어지는 추천 코스"}
             </Text>
 
             <View className="mt-[20px] flex-row flex-wrap gap-[8px]">
@@ -412,7 +431,7 @@ export default function RouteDetailScreen() {
               AI 추천 이유
             </Text>
             <Text className="mt-[10px] text-[13px] leading-5 text-gray-02">
-              {route.ai_reason}
+              {route.ai_reason ?? "방문하기 좋은 장소를 순서대로 구성했어요."}
             </Text>
           </View>
 
@@ -477,9 +496,15 @@ export default function RouteDetailScreen() {
             </Text>
           </Pressable>
         ) : (
-          <Pressable className="h-[48px] items-center justify-center rounded-[14px] bg-main-green">
+          <Pressable
+            className={`h-[48px] items-center justify-center rounded-[14px] ${
+              isSaveRoutePending ? "bg-gray-03" : "bg-main-green"
+            }`}
+            disabled={isSaveRoutePending}
+            onPress={() => saveRoute()}
+          >
             <Text className="text-[15px] font-bold text-white">
-              이 동선 저장하기
+              {isSaveRoutePending ? "저장 중" : "이 동선 저장하기"}
             </Text>
           </Pressable>
         )}

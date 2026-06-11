@@ -3,6 +3,7 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import * as Linking from "expo-linking";
@@ -15,8 +16,11 @@ import "./global.css";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useKakaoLoginLink } from "@/hooks/use-kakao-login-link";
+import { useAuthStore } from "@/store/login/useAuthStore";
 
 SplashScreen.preventAutoHideAsync();
+
+const AUTH_STORAGE_RESET_FLAG = "auth-storage-reset-2026-06-11";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -34,19 +38,26 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  // useEffect(() => {
-  //   const resetAuthStorageForDebug = async () => {
-  //     await AsyncStorage.removeItem("user-storage");
-  //     useAuthStore.setState({
-  //       isLogin: false,
-  //       accessToken: "",
-  //       refreshToken: "",
-  //       user: null,
-  //     });
-  //   };
+  useEffect(() => {
+    const resetAuthStorageForDebug = async () => {
+      const alreadyReset = await AsyncStorage.getItem(AUTH_STORAGE_RESET_FLAG);
 
-  //   resetAuthStorageForDebug();
-  // }, []);
+      if (alreadyReset) {
+        return;
+      }
+
+      await AsyncStorage.removeItem("user-storage");
+      await AsyncStorage.setItem(AUTH_STORAGE_RESET_FLAG, "true");
+      useAuthStore.setState({
+        isLogin: false,
+        accessToken: "",
+        refreshToken: "",
+        user: null,
+      });
+    };
+
+    resetAuthStorageForDebug();
+  }, []);
 
   useEffect(() => {
     Linking.getInitialURL().then((url) => {
