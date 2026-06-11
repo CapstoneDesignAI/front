@@ -1,19 +1,19 @@
 import FavoritePlaceItem from "./FavoritePlaceItem";
 
-type FavoritePlace = {
-  id: number;
-  name: string;
-  distance: string;
-  description: string;
-  tags: string[];
-};
-
 type FavoritePlaceListProps = {
-  places: FavoritePlace[];
+  onDeletePlace: (place: IBookmarkedPlaceItem) => void;
+  places: IBookmarkedPlaceItem[];
 };
 
-export default function FavoritePlaceList({ places }: FavoritePlaceListProps) {
+export default function FavoritePlaceList({
+  onDeletePlace,
+  places,
+}: FavoritePlaceListProps) {
   return places.map((place) => (
-    <FavoritePlaceItem key={place.id} place={place} />
+    <FavoritePlaceItem
+      key={place.bookmark_id}
+      place={place}
+      onDelete={onDeletePlace}
+    />
   ));
 }

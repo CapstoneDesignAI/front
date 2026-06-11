@@ -18,6 +18,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const getPlaceOrder = (place: IPlaceItem) =>
   place.order ?? place.visit_order ?? 0;
@@ -97,7 +98,10 @@ const getTransportationItems = (
   }
 
   const knownItems =
-    transportation.items ?? transportation.segments ?? transportation.routes;
+    transportation.items ??
+    transportation.segments ??
+    transportation.routes ??
+    transportation.details;
 
   if (knownItems) {
     return knownItems;
@@ -145,6 +149,8 @@ function TransportationBottomSheet({
   transportation,
   visible,
 }: TransportationBottomSheetProps) {
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal
       animationType="slide"
@@ -154,7 +160,10 @@ function TransportationBottomSheet({
     >
       <View className="flex-1 justify-end bg-black/35">
         <Pressable className="flex-1" onPress={onClose} />
-        <View className="max-h-[78%] rounded-t-[28px] bg-background pb-6 shadow-xl">
+        <View
+          className="h-[80%] rounded-t-[28px] bg-background shadow-xl"
+          style={{ paddingBottom: insets.bottom || 24 }}
+        >
           <View className="items-center pb-2 pt-[10px]">
             <View className="h-1 w-[42px] rounded-full bg-main-green" />
           </View>
@@ -213,7 +222,7 @@ function TransportationBottomSheet({
                     잠시 후 다시 안내 버튼을 눌러 확인해 주세요.
                   </Text>
                 </View>
-              ) : transportation?.available === false ? (
+              ) : transportation?.available === false && items.length === 0 ? (
                 <View className="min-h-[148px] items-center justify-center">
                   <MaterialCommunityIcons
                     name="map-marker-off-outline"
@@ -428,6 +437,7 @@ export default function RouteDetailScreen() {
   ].filter((metric): metric is string => Boolean(metric));
   const reasonDetail = route?.ai_reason_detail;
   const placeCount = route?.place_count ?? places.length;
+  const routeImageUrl = route?.image_url ?? card?.thumbnail_url ?? places[0]?.image_url;
   const routeTags = [
     ...(route?.route_badges ?? []),
     ...(route?.tags ?? []),
@@ -523,7 +533,17 @@ export default function RouteDetailScreen() {
             </Text>
           </View>
 
-          <View className="rounded-[28px] bg-[#315C32] px-6 py-[28px]">
+          <View className="overflow-hidden rounded-[28px] bg-[#315C32]">
+            {routeImageUrl ? (
+              <View className="h-[150px] w-full">
+                <ExpoImage
+                  source={{ uri: routeImageUrl }}
+                  contentFit="cover"
+                  style={{ height: "100%", width: "100%" }}
+                />
+              </View>
+            ) : null}
+            <View className="px-6 py-[28px]">
             <Text
               className="text-[26px] font-black text-white"
               numberOfLines={2}
@@ -563,6 +583,7 @@ export default function RouteDetailScreen() {
                   size="medium"
                 />
               ) : null}
+            </View>
             </View>
           </View>
 
@@ -776,15 +797,6 @@ export default function RouteDetailScreen() {
                   ) : null}
                 </View>
 
-                <View className="ml-[12px] h-[54px] w-[54px] overflow-hidden rounded-[14px] bg-[#EFEFEB]">
-                  {place.image_url ? (
-                    <ExpoImage
-                      source={{ uri: place.image_url }}
-                      contentFit="cover"
-                      style={{ height: "100%", width: "100%" }}
-                    />
-                  ) : null}
-                </View>
               </View>
             ))}
           </View>

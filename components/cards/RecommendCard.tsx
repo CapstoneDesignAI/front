@@ -1,7 +1,7 @@
-import { Image as ExpoImage } from "expo-image";
 import { router } from "expo-router";
 import React, { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import Tag from "./Tag";
 
 type RecommendCardProps = {
@@ -50,7 +50,6 @@ export default function RecommendCard({
       .slice(0, 4)
       .join(" → ");
   const routeId = safeRecommendation.route_id ?? safeRecommendation.title;
-  const thumbnailUrl = card?.thumbnail_url ?? places[0]?.image_url;
   const regionLabel =
     card?.region_label ??
     [safeRecommendation.sido, safeRecommendation.sigungu]
@@ -70,6 +69,11 @@ export default function RecommendCard({
       safeRecommendation.summary?.local_consumption_text,
   ].filter((metric): metric is string => Boolean(metric));
 
+  const imageUrl =
+    (safeRecommendation as any).image_url ??
+    card?.thumbnail_url ??
+    places[0]?.image_url;
+
   const handleViewRoute = () => {
     router.push({
       pathname: "/route-detail",
@@ -80,9 +84,9 @@ export default function RecommendCard({
   return (
     <View className="w-full gap-[22px] rounded-[24px] border border-gray-04 bg-white px-[18px] pb-[18px] pt-[18px] shadow-sm">
       <View className="relative h-[98px] w-full overflow-hidden rounded-[20px] bg-[#D6E8F0]">
-        {thumbnailUrl ? (
+        {imageUrl ? (
           <ExpoImage
-            source={{ uri: thumbnailUrl }}
+            source={{ uri: imageUrl }}
             contentFit="cover"
             style={{ height: "100%", width: "100%" }}
           />

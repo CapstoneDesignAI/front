@@ -13,6 +13,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type StepKey =
   | "duration"
@@ -39,13 +40,11 @@ const steps: Step[] = [
       "도 기준으로 선택해 주세요. 정하지 않았다면 넘어가도 괜찮아요.",
     optional: true,
     options: [
-      "서울특별시",
       "경기도",
       "강원도",
       "충청도",
       "전라도",
       "경상도",
-      "제주도",
     ],
   },
   {
@@ -135,26 +134,26 @@ const buildAIRecommendationRequest = (
 
 const THEME_BY_PURPOSE: Record<AIRecommendationTravelPurpose, string> = {
   힐링: "healing",
-  데이트: "date",
-  인스타감성: "instagram",
+  데이트: "healing",
+  인스타감성: "healing",
   "자연/풍경": "nature",
-  현지경험: "local",
-  "역사/문화": "history",
+  현지경험: "local_market",
+  "역사/문화": "revitalization",
 };
 
 const TRAVEL_TIME_BY_DURATION: Record<AIRecommendationDuration, string> = {
-  "1~2시간": "short",
+  "1~2시간": "3hours",
   반나절: "half_day",
-  하루: "day",
+  하루: "full_day",
   "1박2일": "overnight",
-  "2박3일": "two_nights",
+  "2박3일": "overnight",
   기타: "half_day",
 };
 
 const TRANSPORT_BY_LABEL: Record<AIRecommendationTransportation, string> = {
   대중교통: "public_transport",
   자차: "car",
-  자전거: "bike",
+  자전거: "walk",
   도보: "walk",
   뚜벅이: "walk",
 };
@@ -164,19 +163,30 @@ const COMPANION_BY_LABEL: Record<AIRecommendationCompanion, string> = {
   친구: "friends",
   연인: "couple",
   가족: "family",
-  부모님: "parents",
-  "아이와 함께": "kids",
-  "반려동물과 함께": "pet",
-  "동아리/단체": "group",
+  부모님: "family",
+  "아이와 함께": "family",
+  "반려동물과 함께": "friends",
+  "동아리/단체": "friends",
+};
+
+const AREA_GROUP_BY_REGION_LABEL: Record<string, string> = {
+  경기도: "near_capital",
+  강원도: "gangwon",
+  충청도: "chungcheong",
+  전라도: "jeolla",
+  경상도: "gyeongsang",
 };
 
 const buildScoreRecommendationRequest = (
   answers: Partial<Record<StepKey, string>>,
 ): IScoreRecommendationRequest => {
   const aiRequest = buildAIRecommendationRequest(answers);
+  const areaGroup = aiRequest.region
+    ? AREA_GROUP_BY_REGION_LABEL[aiRequest.region] ?? aiRequest.region
+    : null;
 
   return {
-    area_group: aiRequest.region,
+    area_group: areaGroup,
     theme: THEME_BY_PURPOSE[aiRequest.travel_purpose],
     travel_time: TRAVEL_TIME_BY_DURATION[aiRequest.duration],
     transport: TRANSPORT_BY_LABEL[aiRequest.transportation],
@@ -188,6 +198,7 @@ const buildScoreRecommendationRequest = (
 
 export default function CustomTripScreen() {
   const { accessToken } = useAuthStore();
+  const insets = useSafeAreaInsets();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Partial<Record<StepKey, string>>>({});
   const [AIrequest, setAIRequest] = useState<IPostAIRecommendationRequest>();
@@ -302,7 +313,7 @@ export default function CustomTripScreen() {
     <View className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
-        contentContainerClassName="grow px-6 pb-10 pt-5"
+        contentContainerClassName="grow px-6 pb-[120px] pt-5"
         showsVerticalScrollIndicator={false}
       >
         {!recommendation ? (
@@ -388,11 +399,25 @@ export default function CustomTripScreen() {
           </View>
         )}
 
-        <View className="mt-8 flex-row items-center justify-between gap-3">
+        {isRecommendationPending ? (
+          <View className="mt-5 items-center">
+            <ActivityIndicator color="#739E6B" />
+            <Text className="mt-2 text-[13px] font-medium text-gray-02">
+              취향에 맞는 동선을 고르는 중이에요
+            </Text>
+          </View>
+        ) : null}
+      </ScrollView>
+
+      <View
+        className="absolute bottom-0 left-0 right-0 bg-background px-6 pb-6 pt-3 shadow-lg"
+        style={{ paddingBottom: insets.bottom || 24 }}
+      >
+        <View className="flex-row items-center justify-between gap-3">
           {recommendation ? (
             <>
               <Pressable
-                className="h-[52px] flex-1 items-center justify-center rounded-[16px] border border-gray-04 bg-background"
+                className="h-[46px] flex-1 items-center justify-center rounded-[10px] border border-gray-04 bg-background"
                 onPress={() => {
                   if (AIrequest) {
                     AIRecommendation(AIrequest);
@@ -400,7 +425,7 @@ export default function CustomTripScreen() {
                 }}
                 disabled={isRecommendationPending}
               >
-                <Text className="text-[16px] font-bold text-gray-02">
+                <Text className="text-[15px] font-bold text-gray-02">
                   {isRecommendationPending ? "추천 받는 중" : "다른 추천 받기"}
                 </Text>
               </Pressable>
@@ -408,16 +433,17 @@ export default function CustomTripScreen() {
                 title="홈으로 가기"
                 size="small"
                 color="gradient"
+                style={{ flex: 1, width: undefined }}
                 onPress={() => router.replace("/(tabs)/home")}
               />
             </>
           ) : (
             <>
               <Pressable
-                className="h-[52px] flex-1 items-center justify-center rounded-[16px] border border-gray-04 bg-background"
+                className="h-[46px] flex-1 items-center justify-center rounded-[10px] border border-gray-04 bg-background"
                 onPress={goBack}
               >
-                <Text className="text-[16px] font-bold text-gray-02">
+                <Text className="text-[15px] font-bold text-gray-02">
                   {isFirstStep ? "닫기" : "이전"}
                 </Text>
               </Pressable>
@@ -438,21 +464,13 @@ export default function CustomTripScreen() {
                     ? "gradient"
                     : "disabled"
                 }
+                style={{ flex: 1, width: undefined }}
                 onPress={goNext}
               />
             </>
           )}
         </View>
-
-        {isRecommendationPending ? (
-          <View className="mt-5 items-center">
-            <ActivityIndicator color="#739E6B" />
-            <Text className="mt-2 text-[13px] font-medium text-gray-02">
-              취향에 맞는 동선을 고르는 중이에요
-            </Text>
-          </View>
-        ) : null}
-      </ScrollView>
+      </View>
     </View>
   );
 }

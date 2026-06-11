@@ -1,5 +1,7 @@
+import deleteBookmark from "@/api/bookmarks/deleteBookmark";
 import deleteFolder from "@/api/bookmarks/deleteFolder";
 import getBookmarkFolders from "@/api/bookmarks/getBookmarkFolders";
+import getBookmarkedPlaces from "@/api/bookmarks/getBookmarkedPlaces";
 import postBookmark from "@/api/bookmarks/postBookmark";
 import postCreateFolder from "@/api/bookmarks/postCreateFolder";
 import putEditFolder from "@/api/bookmarks/putEditFolder";
@@ -17,6 +19,7 @@ import {
 
 import BottomSheetHeader from "./BottomSheetHeader";
 import FavoriteFolderList from "./FavoriteFolderList";
+import FavoritePlaceList from "./FavoritePlaceList";
 
 const COLLAPSED_SHEET_HEIGHT = 100;
 const EXPANDED_SHEET_HEIGHT = 600;
@@ -88,11 +91,27 @@ export default function BottomSheet({
     enabled: Boolean(accessToken),
   });
 
+  const {
+    data: bookmarkedPlaces,
+    isLoading: isPlacesLoading,
+  } = useQuery({
+    queryKey: ["BOOKMARK_PLACES", accessToken, selectedFolderId],
+    queryFn: () => getBookmarkedPlaces(accessToken, selectedFolderId!),
+    enabled: Boolean(accessToken && selectedFolderId),
+  });
+
   const folders = useMemo(() => bookmarkFolders ?? [], [bookmarkFolders]);
+  const places = useMemo(() => bookmarkedPlaces ?? [], [bookmarkedPlaces]);
 
   const invalidateFolders = async () => {
     await queryClient.invalidateQueries({
       queryKey: ["BOOKMARK_FOLDERS", accessToken],
+    });
+  };
+
+  const invalidatePlaces = async (folderId: string) => {
+    await queryClient.invalidateQueries({
+      queryKey: ["BOOKMARK_PLACES", accessToken, folderId],
     });
   };
 
@@ -118,6 +137,7 @@ export default function BottomSheet({
       }),
     onSuccess: async (_, folderId) => {
       await invalidateFolders();
+      await invalidatePlaces(folderId);
       const folder = folders.find((f) => f.folder_id === folderId);
       Alert.alert(
         "장소 저장 완료",
@@ -160,6 +180,23 @@ export default function BottomSheet({
       Alert.alert(
         "폴더 삭제 실패",
         error instanceof Error ? error.message : "폴더를 삭제하지 못했습니다.",
+      );
+    },
+  });
+
+  const deletePlaceMutation = useMutation({
+    mutationFn: (placeId: string) => deleteBookmark(accessToken, placeId),
+    onSuccess: async () => {
+      if (selectedFolderId) {
+        await invalidatePlaces(selectedFolderId);
+      }
+      await invalidateFolders();
+      Alert.alert("장소 삭제 완료");
+    },
+    onError: (error) => {
+      Alert.alert(
+        "장소 삭제 실패",
+        error instanceof Error ? error.message : "장소를 삭제하지 못했습니다.",
       );
     },
   });
@@ -242,6 +279,21 @@ export default function BottomSheet({
         text: "삭제",
         style: "destructive",
         onPress: () => deleteFolderMutation.mutate(folder.folder_id),
+      },
+    ]);
+  };
+
+  const handleDeletePlace = (place: IBookmarkedPlaceItem) => {
+    if (!requireLogin()) {
+      return;
+    }
+
+    Alert.alert("장소 삭제", `"${place.name}"을(를) 즐겨찾기에서 삭제할까요?`, [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: () => deletePlaceMutation.mutate(place.place_id),
       },
     ]);
   };
@@ -331,10 +383,19 @@ export default function BottomSheet({
           <Text className="px-1 py-4 text-center text-[13px] text-gray-02">
             폴더를 불러오는 중이에요.
           </Text>
-        ) : selectedFolder ? (
+        ) : selectedFolder && isPlacesLoading ? (
           <Text className="px-1 py-4 text-center text-[13px] text-gray-02">
-            저장한 장소 {selectedFolder.bookmark_count}개
+            저장한 장소를 불러오는 중이에요.
           </Text>
+        ) : selectedFolder && places.length === 0 ? (
+          <Text className="px-1 py-4 text-center text-[13px] text-gray-02">
+            아직 저장한 장소가 없어요.
+          </Text>
+        ) : selectedFolder ? (
+          <FavoritePlaceList
+            places={places}
+            onDeletePlace={handleDeletePlace}
+          />
         ) : (
           <FavoriteFolderList
             folders={folders}

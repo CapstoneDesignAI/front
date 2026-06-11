@@ -219,11 +219,13 @@ interface IPostAIRecommendationResponse {
 type IRouteRecommendation = IPostAIRecommendationResponse & {
   id?: string;
   place_count?: number;
+  image_url?: string | null;
   saved_at?: string;
   created_at?: string;
   updated_at?: string;
   description?: string | null;
   tags?: string[];
+  image_url?: string | null;
 };
 
 interface ISaveRouteFromRecommendationRequest {
@@ -286,4 +288,5 @@ interface IGetRouteTransportationResponse {
   items?: IRouteTransportationItem[];
   segments?: IRouteTransportationItem[];
   routes?: IRouteTransportationItem[];
+  details?: IRouteTransportationItem[];
 }

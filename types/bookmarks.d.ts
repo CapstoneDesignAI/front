@@ -42,3 +42,19 @@ type IPostBookmarkResponse = {
   place_id: string;
   is_newly_created_place: boolean;
 };
+
+type IBookmarkMutationResponse = {
+  message: string;
+};
+
+type IBookmarkedPlaceItem = {
+  bookmark_id: string;
+  folder_id: string;
+  place_id: string;
+  name: string;
+  address: string;
+  image_url?: string | null;
+  category: string;
+};
+
+type IGetBookmarkedPlacesResponse = IBookmarkedPlaceItem[];

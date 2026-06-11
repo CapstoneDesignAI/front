@@ -1,15 +1,16 @@
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, View, ViewStyle } from "react-native";
 
 interface Props {
   title: string;
   size: "large" | "small";
   color: "gradient" | "active" | "orange" | "lightOrange" | "gray" | "disabled";
   onPress: () => void;
+  style?: ViewStyle;
 }
 
-export default function Button({ title, size, color, onPress }: Props) {
+export default function Button({ title, size, color, onPress, style }: Props) {
   const BUTTON_SIZE =
     size === "large" ? "w-[300px] h-[52px]" : "w-[147px] h-[46px]";
 
@@ -43,6 +44,7 @@ export default function Button({ title, size, color, onPress }: Props) {
     <Pressable
       className={`${BUTTON_SIZE} rounded-[10px] overflow-hidden`}
       onPress={onPress}
+      style={style}
     >
       {color === "gradient" ? (
         <LinearGradient

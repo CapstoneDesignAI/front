@@ -7,6 +7,7 @@ import MissionItem from "@/components/history/MissionItem";
 import StampCoupon from "@/components/history/StampCoupon";
 import { useAuthStore } from "@/store/login/useAuthStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Image as ExpoImage } from "expo-image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -89,6 +90,7 @@ function SavedTripCard({
   date,
   summary,
   count,
+  imageUrl,
   onDelete,
 }: {
   id: string;
@@ -96,12 +98,23 @@ function SavedTripCard({
   date: string;
   summary: string;
   count: number;
+  imageUrl?: string | null;
   onDelete: () => void;
 }) {
   return (
     <View className="overflow-hidden rounded-[24px] border border-gray-04 bg-white shadow-sm">
       <View className="relative h-[86px] bg-[#D6E8F0]">
-        <View className="absolute bottom-[-38px] left-[-8px] h-[96px] w-[96px] rounded-full bg-white/25" />
+        {imageUrl ? (
+          <ExpoImage
+            source={{ uri: imageUrl }}
+            contentFit="cover"
+            style={{ height: "100%", width: "100%" }}
+          />
+        ) : (
+          <>
+            <View className="absolute bottom-[-38px] left-[-8px] h-[96px] w-[96px] rounded-full bg-white/25" />
+          </>
+        )}
         <View className="absolute right-[18px] top-[18px] h-[34px] w-[34px] items-center justify-center rounded-full bg-white">
           <MaterialCommunityIcons name="routes" size={20} color="#739E6B" />
         </View>
@@ -283,6 +296,7 @@ export default function HistoryScreen() {
                     date={formatSavedDate(route.saved_at ?? route.created_at)}
                     summary={getRouteSummary(route)}
                     count={route.place_count ?? route.places?.length ?? 0}
+                    imageUrl={route.image_url}
                     onDelete={() => removeRoute(id)}
                   />
                 );
