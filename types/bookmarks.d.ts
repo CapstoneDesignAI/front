@@ -20,3 +20,25 @@ type IPostBookmarkPlace = {
   place_id: string;
   folder_id: string;
 };
+
+type IKakaoPlacePayload = {
+  kakao_place_id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  address: string;
+  category: string;
+};
+
+type IPostBookmarkRequest = {
+  place?: IKakaoPlacePayload;
+  place_id?: string;
+  folder_id?: string;
+};
+
+type IPostBookmarkResponse = {
+  message: string;
+  bookmark_id: string;
+  place_id: string;
+  is_newly_created_place: boolean;
+};
