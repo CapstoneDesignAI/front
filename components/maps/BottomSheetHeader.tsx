@@ -10,6 +10,8 @@ type BottomSheetHeaderProps = {
   selectedFolder?: IFolderItem;
   onDeletePress?: (folder: IFolderItem) => void;
   onEditPress?: (folder: IFolderItem) => void;
+  isSavingMode?: boolean;
+  pendingPlaceName?: string;
 };
 
 export default function BottomSheetHeader({
@@ -21,6 +23,8 @@ export default function BottomSheetHeader({
   selectedFolder,
   onDeletePress,
   onEditPress,
+  isSavingMode,
+  pendingPlaceName,
 }: BottomSheetHeaderProps) {
   return (
     <View className="flex-row items-center justify-between px-5 pb-3">
@@ -42,12 +46,14 @@ export default function BottomSheetHeader({
           <View className="h-[28px]"></View>
         )}
         <Text className="mt-0.5 text-[22px] font-extrabold text-gray-01">
-          {selectedFolder?.name ?? "즐겨찾기"}
+          {isSavingMode ? "장소 저장하기" : (selectedFolder?.name ?? "즐겨찾기")}
         </Text>
         <Text className="mt-1 text-[13px] text-gray-02">
-          {selectedFolder
-            ? `${selectedFolder.bookmark_count}개의 저장한 장소`
-            : `${folderCount}개의 폴더`}
+          {isSavingMode
+            ? `"${pendingPlaceName}"을(를) 저장할 폴더를 골라주세요`
+            : selectedFolder
+              ? `${selectedFolder.bookmark_count}개의 저장한 장소`
+              : `${folderCount}개의 폴더`}
         </Text>
       </View>
       <View className="flex-row items-center gap-2">

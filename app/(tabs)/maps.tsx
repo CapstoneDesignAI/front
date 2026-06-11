@@ -1,19 +1,25 @@
 import postBookmark from "@/api/bookmarks/postBookmark";
 import { useAuthStore } from "@/store/login/useAuthStore";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams } from "expo-router";
+import { useMemo, useState } from "react";
 import { Alert, Text, View } from "react-native";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 
 import BottomSheet from "@/components/maps/BottomSheet";
 import { ThemedView } from "@/components/themed-view";
 
-const kakaoMapWebUrl =
+const KAKAO_MAP_BASE_URL =
   process.env.EXPO_PUBLIC_KAKAO_MAP_URL ??
   "https://capstone-kakao-map.vercel.app/";
 
 type KakaoMapWebViewMessage = {
   type: "KAKAO_PLACE_SELECTED";
-  payload: IKakaoPlacePayload;
+  payload: {
+    place_id: string | null;
+    folder_id: string | null;
+    place: any;
+  };
 };
 
 function isKakaoPlaceMessage(data: unknown): data is KakaoMapWebViewMessage {
@@ -22,40 +28,45 @@ function isKakaoPlaceMessage(data: unknown): data is KakaoMapWebViewMessage {
   }
 
   const message = data as Partial<KakaoMapWebViewMessage>;
-  const payload = message.payload as Partial<IKakaoPlacePayload> | undefined;
+  if (message.type !== "KAKAO_PLACE_SELECTED") {
+    return false;
+  }
+
+  const payload = message.payload;
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+
+  const place = (payload as any).place;
+  if (!place || typeof place !== "object") {
+    return false;
+  }
+
+  const hasLat = typeof place.lat === "number" || typeof place.latitude === "number";
+  const hasLng = typeof place.lng === "number" || typeof place.longitude === "number";
 
   return (
-    message.type === "KAKAO_PLACE_SELECTED" &&
-    Boolean(payload) &&
-    typeof payload?.kakao_place_id === "string" &&
-    typeof payload.name === "string" &&
-    typeof payload.latitude === "number" &&
-    typeof payload.longitude === "number" &&
-    typeof payload.address === "string" &&
-    typeof payload.category === "string"
+    typeof place.kakao_place_id === "string" &&
+    typeof place.name === "string" &&
+    hasLat &&
+    hasLng &&
+    typeof place.address === "string" &&
+    typeof place.category === "string"
   );
 }
 
 export default function MapsScreen() {
   const { accessToken } = useAuthStore();
-  const queryClient = useQueryClient();
+  const { folder_id } = useLocalSearchParams<{ folder_id?: string }>();
+  const [pendingPlace, setPendingPlace] = useState<IKakaoPlacePayload | null>(null);
+  const [targetFolderId, setTargetFolderId] = useState<string | null>(null);
 
-  const savePlaceMutation = useMutation({
-    mutationFn: (place: IKakaoPlacePayload) =>
-      postBookmark(accessToken, { place }),
-    onSuccess: async (_, place) => {
-      await queryClient.invalidateQueries({
-        queryKey: ["BOOKMARK_FOLDERS", accessToken],
-      });
-      Alert.alert("장소 저장 완료", `${place.name}을(를) 저장했습니다.`);
-    },
-    onError: (error) => {
-      Alert.alert(
-        "장소 저장 실패",
-        error instanceof Error ? error.message : "장소를 저장하지 못했습니다.",
-      );
-    },
-  });
+  const kakaoMapWebUrl = useMemo(() => {
+    if (!folder_id) return KAKAO_MAP_BASE_URL;
+    const url = new URL(KAKAO_MAP_BASE_URL);
+    url.searchParams.set("folder_id", folder_id);
+    return url.toString();
+  }, [folder_id]);
 
   const handleMapMessage = (event: WebViewMessageEvent) => {
     let parsedMessage: unknown;
@@ -75,7 +86,20 @@ export default function MapsScreen() {
       return;
     }
 
-    savePlaceMutation.mutate(parsedMessage.payload);
+    const { payload } = parsedMessage;
+    const { place, folder_id: messageFolderId } = payload;
+
+    const mappedPayload: IKakaoPlacePayload = {
+      kakao_place_id: place.kakao_place_id,
+      name: place.name,
+      lat: place.lat ?? place.latitude,
+      lng: place.lng ?? place.longitude,
+      address: place.address,
+      category: place.category,
+    };
+
+    setTargetFolderId(messageFolderId);
+    setPendingPlace(mappedPayload);
   };
 
   return (
@@ -100,7 +124,14 @@ export default function MapsScreen() {
             </View>
           )}
         />
-        <BottomSheet />
+        <BottomSheet
+          pendingPlace={pendingPlace}
+          targetFolderId={targetFolderId}
+          onCloseSavingMode={() => {
+            setPendingPlace(null);
+            setTargetFolderId(null);
+          }}
+        />
       </View>
     </ThemedView>
   );

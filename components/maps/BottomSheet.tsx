@@ -1,5 +1,6 @@
 import deleteFolder from "@/api/bookmarks/deleteFolder";
 import getBookmarkFolders from "@/api/bookmarks/getBookmarkFolders";
+import postBookmark from "@/api/bookmarks/postBookmark";
 import postCreateFolder from "@/api/bookmarks/postCreateFolder";
 import putEditFolder from "@/api/bookmarks/putEditFolder";
 import { useAuthStore } from "@/store/login/useAuthStore";
@@ -24,7 +25,17 @@ const clamp = (value: number, min: number, max: number) => {
   return Math.min(Math.max(value, min), max);
 };
 
-export default function BottomSheet() {
+type BottomSheetProps = {
+  pendingPlace?: IKakaoPlacePayload | null;
+  targetFolderId?: string | null;
+  onCloseSavingMode?: () => void;
+};
+
+export default function BottomSheet({
+  pendingPlace,
+  targetFolderId,
+  onCloseSavingMode,
+}: BottomSheetProps) {
   const { accessToken } = useAuthStore();
   const queryClient = useQueryClient();
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
@@ -34,6 +45,14 @@ export default function BottomSheet() {
   ).current;
   const currentHeightRef = useRef(COLLAPSED_SHEET_HEIGHT);
   const dragStartHeightRef = useRef(COLLAPSED_SHEET_HEIGHT);
+
+  const isSavingMode = Boolean(pendingPlace);
+
+  useEffect(() => {
+    if (isSavingMode && targetFolderId) {
+      savePlaceMutation.mutate(targetFolderId);
+    }
+  }, [isSavingMode, targetFolderId]);
 
   useEffect(() => {
     const listener = sheetHeight.addListener(({ value }) => {
@@ -56,6 +75,12 @@ export default function BottomSheet() {
       mass: 0.8,
     }).start();
   };
+
+  useEffect(() => {
+    if (isSavingMode) {
+      snapSheet(EXPANDED_SHEET_HEIGHT);
+    }
+  }, [isSavingMode]);
 
   const { data: bookmarkFolders, isLoading: isFoldersLoading } = useQuery({
     queryKey: ["BOOKMARK_FOLDERS", accessToken],
@@ -81,6 +106,30 @@ export default function BottomSheet() {
       Alert.alert(
         "폴더 생성 실패",
         error instanceof Error ? error.message : "폴더를 생성하지 못했습니다.",
+      );
+    },
+  });
+
+  const savePlaceMutation = useMutation({
+    mutationFn: (folderId: string) =>
+      postBookmark(accessToken, {
+        place: pendingPlace!,
+        folder_id: folderId,
+      }),
+    onSuccess: async (_, folderId) => {
+      await invalidateFolders();
+      const folder = folders.find((f) => f.folder_id === folderId);
+      Alert.alert(
+        "장소 저장 완료",
+        `${pendingPlace?.name}을(를) ${folder?.name} 폴더에 저장했습니다.`,
+      );
+      onCloseSavingMode?.();
+      snapSheet(COLLAPSED_SHEET_HEIGHT);
+    },
+    onError: (error) => {
+      Alert.alert(
+        "장소 저장 실패",
+        error instanceof Error ? error.message : "장소를 저장하지 못했습니다.",
       );
     },
   });
@@ -119,9 +168,13 @@ export default function BottomSheet() {
     return folders.find((folder) => folder.folder_id === selectedFolderId);
   }, [folders, selectedFolderId]);
 
-  const openFolder = (folderId: string) => {
-    setSelectedFolderId(folderId);
-    snapSheet(EXPANDED_SHEET_HEIGHT);
+  const handleFolderPress = (folderId: string) => {
+    if (isSavingMode) {
+      savePlaceMutation.mutate(folderId);
+    } else {
+      setSelectedFolderId(folderId);
+      snapSheet(EXPANDED_SHEET_HEIGHT);
+    }
   };
 
   const requireLogin = () => {
@@ -194,12 +247,17 @@ export default function BottomSheet() {
   };
 
   const toggleSheet = () => {
-    snapSheet(
-      currentHeightRef.current >
-        (COLLAPSED_SHEET_HEIGHT + EXPANDED_SHEET_HEIGHT) / 2
-        ? COLLAPSED_SHEET_HEIGHT
-        : EXPANDED_SHEET_HEIGHT,
-    );
+    if (isSavingMode) {
+      onCloseSavingMode?.();
+      snapSheet(COLLAPSED_SHEET_HEIGHT);
+    } else {
+      snapSheet(
+        currentHeightRef.current >
+          (COLLAPSED_SHEET_HEIGHT + EXPANDED_SHEET_HEIGHT) / 2
+          ? COLLAPSED_SHEET_HEIGHT
+          : EXPANDED_SHEET_HEIGHT,
+      );
+    }
   };
 
   const panResponder = useRef(
@@ -225,6 +283,10 @@ export default function BottomSheet() {
           (gestureState.vy <= 0.45 &&
             currentHeightRef.current >
               (COLLAPSED_SHEET_HEIGHT + EXPANDED_SHEET_HEIGHT) / 2);
+
+        if (!shouldExpand && isSavingMode) {
+          onCloseSavingMode?.();
+        }
 
         snapSheet(
           shouldExpand ? EXPANDED_SHEET_HEIGHT : COLLAPSED_SHEET_HEIGHT,
@@ -253,6 +315,8 @@ export default function BottomSheet() {
         onToggle={toggleSheet}
         onDeletePress={handleDeleteFolder}
         onEditPress={handleEditFolder}
+        isSavingMode={isSavingMode}
+        pendingPlaceName={pendingPlace?.name}
       />
       <ScrollView
         className="flex-1"
@@ -276,7 +340,7 @@ export default function BottomSheet() {
             folders={folders}
             onDeleteFolder={handleDeleteFolder}
             onEditFolder={handleEditFolder}
-            onFolderPress={openFolder}
+            onFolderPress={handleFolderPress}
           />
         )}
       </ScrollView>
