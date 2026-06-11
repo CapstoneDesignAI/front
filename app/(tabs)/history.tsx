@@ -61,7 +61,8 @@ const getRouteSummary = (route: IRouteRecommendation) =>
   route.places
     ?.map((place) => place.name)
     .slice(0, 4)
-    .join(" · ") || "저장한 추천 동선";
+    .join(" · ") ||
+  (route.place_count ? `${route.place_count}개 장소로 구성된 추천 동선` : "저장한 추천 동선");
 
 function SectionTitle({
   title,
@@ -281,7 +282,7 @@ export default function HistoryScreen() {
                     title={route.title}
                     date={formatSavedDate(route.saved_at ?? route.created_at)}
                     summary={getRouteSummary(route)}
-                    count={route.places?.length ?? 0}
+                    count={route.place_count ?? route.places?.length ?? 0}
                     onDelete={() => removeRoute(id)}
                   />
                 );

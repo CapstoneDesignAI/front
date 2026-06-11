@@ -1,21 +1,5 @@
 import api from "@/_lib/fetcher";
-
-const unwrapAIRecommendation = (data: unknown): IPostAIRecommendationResponse => {
-  if (data && typeof data === "object" && "title" in data && "places" in data) {
-    return data as IPostAIRecommendationResponse;
-  }
-
-  if (data && typeof data === "object") {
-    const record = data as Record<string, unknown>;
-    const candidate = record.data ?? record.recommendation ?? record.route;
-
-    if (candidate && typeof candidate === "object") {
-      return candidate as IPostAIRecommendationResponse;
-    }
-  }
-
-  return data as IPostAIRecommendationResponse;
-};
+import { normalizeRecommendation } from "@/api/recommendations/normalizeRecommendation";
 
 export default async function postAIRecommendation(
   authorization: string,
@@ -30,5 +14,5 @@ export default async function postAIRecommendation(
     authorization,
   });
 
-  return unwrapAIRecommendation(data);
+  return normalizeRecommendation(data);
 }

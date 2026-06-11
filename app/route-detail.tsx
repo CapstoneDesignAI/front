@@ -5,6 +5,7 @@ import postRouteFromRecommendation from "@/api/routes/postRouteFromRecommendatio
 import Tag from "@/components/cards/Tag";
 import { useAuthStore } from "@/store/login/useAuthStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Image as ExpoImage } from "expo-image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -22,7 +23,71 @@ const getPlaceOrder = (place: IPlaceItem) =>
   place.order ?? place.visit_order ?? 0;
 
 const getPlaceDescription = (place: IPlaceItem) =>
-  place.reason ?? place.description ?? "방문하기 좋은 추천 장소입니다.";
+  place.reason ??
+  place.description ??
+  place.place_story ??
+  "방문하기 좋은 추천 장소입니다.";
+
+const formatDate = (date?: string) => {
+  if (!date) {
+    return null;
+  }
+
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return null;
+  }
+
+  return parsedDate
+    .toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+    .replace(/\.$/, "");
+};
+
+const formatCostRange = (min?: number, max?: number) => {
+  if (typeof min !== "number" || typeof max !== "number") {
+    return null;
+  }
+
+  return `${min.toLocaleString("ko-KR")}~${max.toLocaleString("ko-KR")}원`;
+};
+
+const formatMinutes = (minutes?: number) => {
+  if (typeof minutes !== "number") {
+    return null;
+  }
+
+  if (minutes < 60) {
+    return `${minutes}분`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const restMinutes = minutes % 60;
+
+  return restMinutes ? `${hours}시간 ${restMinutes}분` : `${hours}시간`;
+};
+
+const getPlaceCostText = (place: IPlaceItem) =>
+  formatCostRange(place.estimated_cost_min, place.estimated_cost_max);
+
+function InfoRow({ label, value }: { label: string; value?: string | null }) {
+  if (!value) {
+    return null;
+  }
+
+  return (
+    <View className="flex-row items-start justify-between gap-[14px]">
+      <Text className="text-[12px] font-bold text-gray-03">{label}</Text>
+      <Text className="min-w-0 flex-1 text-right text-[13px] font-bold text-gray-01">
+        {value}
+      </Text>
+    </View>
+  );
+}
 
 const getTransportationItems = (
   transportation?: IGetRouteTransportationResponse,
@@ -341,6 +406,68 @@ export default function RouteDetailScreen() {
   });
 
   const transportationItems = getTransportationItems(transportation);
+  const card = route?.card;
+  const regionLabel =
+    card?.region_label ?? [route?.sido, route?.sigungu].filter(Boolean).join(" ");
+  const createdDate = formatDate(route?.created_at);
+  const headlineText =
+    route?.subtitle ??
+    card?.summary ??
+    route?.description ??
+    route?.total_distance_text ??
+    route?.estimated_time ??
+    "AI가 고른 장소 순서대로 이어지는 추천 코스";
+  const summaryMetrics = [
+    route?.summary?.contribution_label,
+    route?.summary?.duration_text,
+    route?.summary?.cost_range_text,
+    route?.summary?.local_consumption_text,
+    typeof route?.contribution_score === "number"
+      ? `지역 기여 ${route.contribution_score}점`
+      : null,
+  ].filter((metric): metric is string => Boolean(metric));
+  const reasonDetail = route?.ai_reason_detail;
+  const placeCount = route?.place_count ?? places.length;
+  const routeTags = [
+    ...(route?.route_badges ?? []),
+    ...(route?.tags ?? []),
+  ].filter(Boolean);
+  const overviewRows = [
+    {
+      label: "지역",
+      value: regionLabel || route?.region?.sigungu,
+    },
+    {
+      label: "테마",
+      value: route?.theme_label,
+    },
+    {
+      label: "여행 시간",
+      value: route?.travel_time_label ?? formatMinutes(route?.estimated_duration_minutes),
+    },
+    {
+      label: "이동 수단",
+      value: route?.transport_label ?? route?.mobility?.recommended_transport,
+    },
+    {
+      label: "동행",
+      value: route?.companion_label,
+    },
+    {
+      label: "총 거리",
+      value: route?.total_distance_text,
+    },
+    {
+      label: "예상 비용",
+      value:
+        route?.summary?.cost_range_text ??
+        formatCostRange(route?.estimated_cost_min, route?.estimated_cost_max),
+    },
+    {
+      label: "저장일",
+      value: createdDate,
+    },
+  ];
 
   if (!accessToken) {
     return (
@@ -404,26 +531,88 @@ export default function RouteDetailScreen() {
               {route.title}
             </Text>
             <Text className="mt-[8px] text-[13px] font-medium leading-5 text-white">
-              {route.total_distance_text ??
-                route.estimated_time ??
-                "AI가 고른 장소 순서대로 이어지는 추천 코스"}
+              {headlineText}
             </Text>
 
             <View className="mt-[20px] flex-row flex-wrap gap-[8px]">
-              <Tag title="태그" tone="green" variant="filled" size="medium" />
+              {regionLabel ? (
+                <Tag
+                  title={regionLabel}
+                  tone="green"
+                  variant="filled"
+                  size="medium"
+                />
+              ) : null}
               <Tag
-                title={route.theme_label ?? "태그"}
+                title={route.theme_label ?? route.card?.theme_label ?? "태그"}
                 tone="orange"
                 variant="filled"
                 size="medium"
               />
               <Tag
-                title={`장소 ${places.length}곳`}
+                title={`장소 ${placeCount}곳`}
                 tone="blue"
                 variant="filled"
                 size="medium"
               />
+              {route.mobility?.label ? (
+                <Tag
+                  title={route.mobility.label}
+                  tone="green"
+                  variant="filled"
+                  size="medium"
+                />
+              ) : null}
             </View>
+          </View>
+
+          {routeTags.length ? (
+            <View className="flex-row flex-wrap gap-[8px]">
+              {routeTags.slice(0, 8).map((tag) => (
+                <Tag key={tag} title={tag} tone="gray" variant="soft" />
+              ))}
+            </View>
+          ) : null}
+
+          {summaryMetrics.length ? (
+            <View className="flex-row flex-wrap gap-[10px]">
+              {summaryMetrics.map((metric) => (
+                <View
+                  key={metric}
+                  className="rounded-[16px] border border-gray-04 bg-white px-[14px] py-[10px]"
+                >
+                  <Text className="text-[12px] font-bold text-main-green">
+                    {metric}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          <View className="rounded-[22px] border border-gray-04 bg-white px-[22px] py-[20px]">
+            <Text className="text-[17px] font-black text-gray-01">
+              동선 요약
+            </Text>
+            <View className="mt-[14px] gap-[10px]">
+              {overviewRows.map((row) => (
+                <InfoRow key={row.label} label={row.label} value={row.value} />
+              ))}
+            </View>
+            {route.contribution_info ? (
+              <View className="mt-[16px] rounded-[16px] bg-[#FDFFFB] px-[14px] py-[12px]">
+                <View className="flex-row items-center justify-between gap-[10px]">
+                  <Text className="text-[13px] font-black text-main-green">
+                    {route.contribution_info.label}
+                  </Text>
+                  <Text className="text-[13px] font-black text-main-orange">
+                    {route.contribution_info.score}점
+                  </Text>
+                </View>
+                <Text className="mt-[6px] text-[12px] leading-5 text-gray-02">
+                  {route.contribution_info.description}
+                </Text>
+              </View>
+            ) : null}
           </View>
 
           <View className="rounded-[22px] border border-gray-04 bg-white px-[22px] py-[20px]">
@@ -433,13 +622,82 @@ export default function RouteDetailScreen() {
             <Text className="mt-[10px] text-[13px] leading-5 text-gray-02">
               {route.ai_reason ?? "방문하기 좋은 장소를 순서대로 구성했어요."}
             </Text>
+            {reasonDetail ? (
+              <View className="mt-[14px] gap-[10px]">
+                {reasonDetail.highlights?.length ? (
+                  <View className="flex-row flex-wrap gap-[8px]">
+                    {reasonDetail.highlights.slice(0, 4).map((highlight) => (
+                      <Tag key={highlight} title={highlight} tone="green" />
+                    ))}
+                  </View>
+                ) : null}
+                {[
+                  reasonDetail.route_design,
+                  reasonDetail.local_contribution,
+                  reasonDetail.traveler_fit,
+                  reasonDetail.closing_tip,
+                ]
+                  .filter(Boolean)
+                  .map((text) => (
+                    <Text
+                      key={text}
+                      className="text-[12px] leading-5 text-gray-02"
+                    >
+                      {text}
+                    </Text>
+                  ))}
+              </View>
+            ) : null}
           </View>
+
+          {route.region_story ? (
+            <View className="rounded-[22px] border border-[#D9E3D3] bg-[#FDFFFB] px-[22px] py-[20px]">
+              <Text className="text-[17px] font-black text-gray-01">
+                {route.region_story.title}
+              </Text>
+              <Text className="mt-[8px] text-[13px] leading-5 text-gray-02">
+                {route.region_story.summary}
+              </Text>
+              <Text className="mt-[8px] text-[12px] leading-5 text-gray-02">
+                {route.region_story.history}
+              </Text>
+              <Text className="mt-[8px] text-[12px] leading-5 text-gray-02">
+                {route.region_story.local_story}
+              </Text>
+              <Text className="mt-[8px] text-[12px] leading-5 text-gray-02">
+                {route.region_story.local_tip}
+              </Text>
+            </View>
+          ) : null}
+
+          {route.local_consumption_points?.length ? (
+            <View className="rounded-[22px] border border-[#E8D6BA] bg-white px-[22px] py-[20px]">
+              <Text className="text-[17px] font-black text-gray-01">
+                지역 소비 포인트
+              </Text>
+              <View className="mt-[12px] gap-[10px]">
+                {route.local_consumption_points.map((point, index) => (
+                  <View
+                    key={`${point.place_id ?? point.place_name ?? point.name}-${index}`}
+                    className="rounded-[16px] bg-[#FFF8F3] px-[14px] py-[12px]"
+                  >
+                    <Text className="text-[13px] font-black text-main-orange">
+                      {point.place_name ?? point.name ?? "추천 장소"}
+                    </Text>
+                    <Text className="mt-[5px] text-[12px] leading-5 text-gray-02">
+                      {point.reason}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
 
           <View className="gap-[10px]">
             {places.map((place, index) => (
               <View
                 key={place.place_id ?? `${place.name}-${index}`}
-                className="min-h-[90px] flex-row items-center rounded-[20px] border border-gray-04 bg-white px-[18px] py-[12px]"
+                className="min-h-[118px] flex-row items-center rounded-[20px] border border-gray-04 bg-white px-[18px] py-[12px]"
               >
                 <View className="h-[36px] w-[36px] items-center justify-center rounded-full bg-main-green">
                   <Text className="text-[15px] font-bold text-white">
@@ -463,24 +721,99 @@ export default function RouteDetailScreen() {
                   </View>
                   <Text
                     className="mt-[6px] text-[12px] leading-4 text-gray-02"
-                    numberOfLines={2}
+                    numberOfLines={3}
                   >
                     {getPlaceDescription(place)}
                   </Text>
-                  <View className="mt-[8px] flex-row gap-[10px]">
+                  {place.contribution_reason || place.local_tip ? (
+                    <Text
+                      className="mt-[6px] text-[12px] leading-4 text-main-green"
+                      numberOfLines={2}
+                    >
+                      {place.contribution_reason ?? place.local_tip}
+                    </Text>
+                  ) : null}
+                  <View className="mt-[8px] flex-row flex-wrap gap-[8px]">
                     {place.category ? (
                       <Tag title={place.category} tone="orange" />
                     ) : null}
                     {place.stay_minutes ? (
                       <Tag title={`${place.stay_minutes}분`} tone="orange" />
                     ) : null}
+                    {typeof place.recommendation_score === "number" ? (
+                      <Tag title={`${place.recommendation_score}점`} tone="green" />
+                    ) : null}
+                    {typeof place.local_contribution_score === "number" ? (
+                      <Tag
+                        title={`기여 ${place.local_contribution_score}점`}
+                        tone="green"
+                      />
+                    ) : null}
+                    {getPlaceCostText(place) ? (
+                      <Tag
+                        title={getPlaceCostText(place) ?? ""}
+                        tone="gray"
+                      />
+                    ) : null}
+                    {place.distance_from_previous_text ? (
+                      <Tag title={place.distance_from_previous_text} tone="blue" />
+                    ) : null}
                   </View>
+                  {place.score_reasons?.length ? (
+                    <Text
+                      className="mt-[6px] text-[11px] leading-4 text-gray-03"
+                      numberOfLines={2}
+                    >
+                      {place.score_reasons.slice(0, 2).join(" · ")}
+                    </Text>
+                  ) : null}
+                  {place.tags?.length ? (
+                    <View className="mt-[7px] flex-row flex-wrap gap-[6px]">
+                      {place.tags.slice(0, 3).map((tag) => (
+                        <Tag key={tag} title={tag} tone="gray" />
+                      ))}
+                    </View>
+                  ) : null}
                 </View>
 
-                <View className="ml-[12px] h-[38px] w-[38px] rounded-[12px] bg-[#EFEFEB]" />
+                <View className="ml-[12px] h-[54px] w-[54px] overflow-hidden rounded-[14px] bg-[#EFEFEB]">
+                  {place.image_url ? (
+                    <ExpoImage
+                      source={{ uri: place.image_url }}
+                      contentFit="cover"
+                      style={{ height: "100%", width: "100%" }}
+                    />
+                  ) : null}
+                </View>
               </View>
             ))}
           </View>
+
+          {route.route_legs?.length ? (
+            <View className="rounded-[22px] border border-gray-04 bg-white px-[22px] py-[20px]">
+              <Text className="text-[17px] font-black text-gray-01">
+                이동 거리
+              </Text>
+              <View className="mt-[12px] gap-[10px]">
+                {route.route_legs.map((leg) => (
+                  <View
+                    key={`${leg.from_place_id}-${leg.to_place_id}-${leg.order}`}
+                    className="flex-row items-center"
+                  >
+                    <Text
+                      className="min-w-0 flex-1 text-[12px] font-medium text-gray-02"
+                      numberOfLines={1}
+                    >
+                      {leg.from_name} → {leg.to_name}
+                    </Text>
+                    <Text className="ml-[10px] text-[12px] font-bold text-main-green">
+                      {leg.distance_text}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
         </View>
       </ScrollView>
 

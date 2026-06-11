@@ -1,3 +1,4 @@
+import { Image as ExpoImage } from "expo-image";
 import { router } from "expo-router";
 import React, { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
@@ -21,6 +22,7 @@ export default function RecommendCard({
     title: "추천 동선",
     places: [],
   };
+  const card = safeRecommendation.card;
   const places = useMemo(() => {
     return [...(safeRecommendation.places ?? [])].sort(
       (prev, next) => getPlaceOrder(prev) - getPlaceOrder(next),
@@ -29,16 +31,44 @@ export default function RecommendCard({
 
   const firstPlaceName = places[0]?.name;
   const lastPlaceName = places[places.length - 1]?.name;
-  const routeDescription =
+  const fallbackRouteDescription =
     firstPlaceName && lastPlaceName
       ? `${firstPlaceName}부터 ${lastPlaceName}까지 이어지는 로컬 동선`
       : (safeRecommendation.ai_reason ??
         "AI가 고른 장소 순서대로 이어지는 추천 동선");
-  const routeSummary = places
-    .map((place) => place.category ?? place.name)
-    .slice(0, 3)
-    .join(" → ");
+  const routeDescription =
+    card?.summary ??
+    card?.ai_reason_summary ??
+    safeRecommendation.subtitle ??
+    safeRecommendation.ai_reason_detail?.overview ??
+    fallbackRouteDescription;
+  const routeSummary =
+    card?.route_preview_text ??
+    card?.place_preview_names?.slice(0, 4).join(" → ") ??
+    places
+      .map((place) => place.name)
+      .slice(0, 4)
+      .join(" → ");
   const routeId = safeRecommendation.route_id ?? safeRecommendation.title;
+  const thumbnailUrl = card?.thumbnail_url ?? places[0]?.image_url;
+  const regionLabel =
+    card?.region_label ??
+    [safeRecommendation.sido, safeRecommendation.sigungu]
+      .filter(Boolean)
+      .join(" ");
+  const themeLabel = card?.theme_label ?? safeRecommendation.theme_label;
+  const transportLabel =
+    card?.mobility?.recommended_transport ??
+    safeRecommendation.mobility?.recommended_transport ??
+    safeRecommendation.transport_label;
+  const contributionScore =
+    card?.contribution_score ?? safeRecommendation.contribution_score;
+  const metrics = [
+    card?.estimated_duration_text ?? safeRecommendation.summary?.duration_text,
+    card?.estimated_cost_text ?? safeRecommendation.summary?.cost_range_text,
+    card?.local_consumption_text ??
+      safeRecommendation.summary?.local_consumption_text,
+  ].filter((metric): metric is string => Boolean(metric));
 
   const handleViewRoute = () => {
     router.push({
@@ -50,8 +80,23 @@ export default function RecommendCard({
   return (
     <View className="w-full gap-[22px] rounded-[24px] border border-gray-04 bg-white px-[18px] pb-[18px] pt-[18px] shadow-sm">
       <View className="relative h-[98px] w-full overflow-hidden rounded-[20px] bg-[#D6E8F0]">
-        <View className="absolute bottom-[-34px] left-[18px] h-[86px] w-[86px] rounded-full bg-white/25" />
-        <View className="absolute bottom-[-46px] right-[34px] h-[118px] w-[118px] rounded-full bg-white/20" />
+        {thumbnailUrl ? (
+          <ExpoImage
+            source={{ uri: thumbnailUrl }}
+            contentFit="cover"
+            style={{ height: "100%", width: "100%" }}
+          />
+        ) : (
+          <>
+            <View className="absolute bottom-[-34px] left-[18px] h-[86px] w-[86px] rounded-full bg-white/25" />
+            <View className="absolute bottom-[-46px] right-[34px] h-[118px] w-[118px] rounded-full bg-white/20" />
+          </>
+        )}
+        <View className="absolute bottom-[14px] left-[14px] flex-row rounded-full bg-white/90 px-[12px] py-[6px]">
+          <Text className="text-[11px] font-bold text-main-green">
+            {regionLabel || "추천 지역"}
+          </Text>
+        </View>
         {onSavePress ? (
           <Pressable
             accessibilityRole="button"
@@ -64,19 +109,25 @@ export default function RecommendCard({
 
       <View className="gap-[12px]">
         <View className="flex-row flex-wrap gap-[8px]">
-          <Tag title="Theme" tone="green" variant="soft" size="medium" />
-          <Tag
-            title={safeRecommendation.theme_label ?? "반나절"}
-            tone="orange"
-            variant="soft"
-            size="medium"
-          />
-          <Tag
-            title={safeRecommendation.mobility?.recommended_transport ?? "도보"}
-            tone="blue"
-            variant="soft"
-            size="medium"
-          />
+          {themeLabel ? (
+            <Tag title={themeLabel} tone="green" variant="soft" size="medium" />
+          ) : null}
+          {transportLabel ? (
+            <Tag
+              title={transportLabel}
+              tone="blue"
+              variant="soft"
+              size="medium"
+            />
+          ) : null}
+          {typeof contributionScore === "number" ? (
+            <Tag
+              title={`기여 ${contributionScore}점`}
+              tone="orange"
+              variant="soft"
+              size="medium"
+            />
+          ) : null}
         </View>
 
         <View className="gap-[8px]">
@@ -97,7 +148,8 @@ export default function RecommendCard({
         <View className="flex-row items-center gap-[22px]">
           <View className="rounded-[18px] border border-[#E8D6BA] bg-background px-[18px] py-[10px]">
             <Text className="text-[12px] font-bold text-main-green">
-              장소 {places.length}곳
+              {card?.place_count_text ??
+                `장소 ${safeRecommendation.place_count ?? places.length}곳`}
             </Text>
           </View>
           <Text
@@ -107,6 +159,14 @@ export default function RecommendCard({
             {routeSummary || "상세 보기에서 장소 정보를 확인해요"}
           </Text>
         </View>
+
+        {metrics.length ? (
+          <View className="flex-row flex-wrap gap-[8px]">
+            {metrics.slice(0, 3).map((metric) => (
+              <Tag key={metric} title={metric} tone="gray" variant="soft" />
+            ))}
+          </View>
+        ) : null}
       </View>
 
       <View className="flex-row justify-between gap-[32px]">

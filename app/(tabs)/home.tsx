@@ -25,6 +25,25 @@ export default function HomeScreen() {
     enabled: Boolean(accessToken),
     retry: false,
   });
+  const todayCard = todayRecommendation?.card;
+  const todayPoint =
+    todayCard?.ai_reason_summary ??
+    todayRecommendation?.ai_reason_detail?.overview ??
+    todayRecommendation?.ai_reason ??
+    "오늘 떠나기 좋은 장소를 자연스럽게 이어봤어요.";
+  const todaySubPoint =
+    todayCard?.route_preview_text ??
+    todayRecommendation?.summary?.duration_text ??
+    todayRecommendation?.total_distance_text ??
+    todayRecommendation?.estimated_time ??
+    "장소 순서대로 부담 없이 따라갈 수 있는 코스예요.";
+  const todayBadges =
+    todayCard?.metric_badges ??
+    [
+      todayCard?.estimated_duration_text,
+      todayCard?.estimated_cost_text,
+      todayCard?.local_consumption_text,
+    ].filter((badge): badge is string => Boolean(badge));
 
   return (
     <View className="flex-1 bg-background">
@@ -52,7 +71,7 @@ export default function HomeScreen() {
 
         <View className="gap-[10px]">
           <Text className="text-[14px] font-medium text-gray-02">
-            오늘의 추천 여행
+            {todayRecommendation?.section_title ?? "오늘의 추천 여행"}
           </Text>
 
           {!accessToken ? (
@@ -98,14 +117,25 @@ export default function HomeScreen() {
                   </Text>
                 </View>
                 <Text className="mt-[8px] text-[15px] font-medium leading-6 text-gray-01">
-                  {todayRecommendation.ai_reason ??
-                    "오늘 떠나기 좋은 장소를 자연스럽게 이어봤어요."}
+                  {todayPoint}
                 </Text>
                 <Text className="mt-[6px] text-[12px] leading-5 text-gray-02">
-                  {todayRecommendation.total_distance_text ??
-                    todayRecommendation.estimated_time ??
-                    "장소 순서대로 부담 없이 따라갈 수 있는 코스예요."}
+                  {todaySubPoint}
                 </Text>
+                {todayBadges.length ? (
+                  <View className="mt-[12px] flex-row flex-wrap gap-[8px]">
+                    {todayBadges.slice(0, 3).map((badge) => (
+                      <View
+                        key={badge}
+                        className="rounded-full bg-white px-[10px] py-[6px]"
+                      >
+                        <Text className="text-[11px] font-bold text-main-green">
+                          {badge}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
               </View>
             </View>
           ) : (

@@ -1,4 +1,4 @@
-import postAIRecommendation from "@/api/ai/postAIRecommendation";
+import postScoreRecommendation from "@/api/recommendations/postScoreRecommendation";
 import Button from "@/components/buttons/Button";
 import RecommendCard from "@/components/cards/RecommendCard";
 import { useAuthStore } from "@/store/login/useAuthStore";
@@ -133,6 +133,59 @@ const buildAIRecommendationRequest = (
   };
 };
 
+const THEME_BY_PURPOSE: Record<AIRecommendationTravelPurpose, string> = {
+  힐링: "healing",
+  데이트: "date",
+  인스타감성: "instagram",
+  "자연/풍경": "nature",
+  현지경험: "local",
+  "역사/문화": "history",
+};
+
+const TRAVEL_TIME_BY_DURATION: Record<AIRecommendationDuration, string> = {
+  "1~2시간": "short",
+  반나절: "half_day",
+  하루: "day",
+  "1박2일": "overnight",
+  "2박3일": "two_nights",
+  기타: "half_day",
+};
+
+const TRANSPORT_BY_LABEL: Record<AIRecommendationTransportation, string> = {
+  대중교통: "public_transport",
+  자차: "car",
+  자전거: "bike",
+  도보: "walk",
+  뚜벅이: "walk",
+};
+
+const COMPANION_BY_LABEL: Record<AIRecommendationCompanion, string> = {
+  혼자: "solo",
+  친구: "friends",
+  연인: "couple",
+  가족: "family",
+  부모님: "parents",
+  "아이와 함께": "kids",
+  "반려동물과 함께": "pet",
+  "동아리/단체": "group",
+};
+
+const buildScoreRecommendationRequest = (
+  answers: Partial<Record<StepKey, string>>,
+): IScoreRecommendationRequest => {
+  const aiRequest = buildAIRecommendationRequest(answers);
+
+  return {
+    area_group: aiRequest.region,
+    theme: THEME_BY_PURPOSE[aiRequest.travel_purpose],
+    travel_time: TRAVEL_TIME_BY_DURATION[aiRequest.duration],
+    transport: TRANSPORT_BY_LABEL[aiRequest.transportation],
+    companion: COMPANION_BY_LABEL[aiRequest.companion],
+    prefer_ai_region: !aiRequest.region,
+    data_source: "auto",
+  };
+};
+
 export default function CustomTripScreen() {
   const { accessToken } = useAuthStore();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -154,7 +207,17 @@ export default function CustomTripScreen() {
   const { mutate: AIRecommendation, isPending: isRecommendationPending } =
     useMutation({
       mutationFn: async (data: IPostAIRecommendationRequest) => {
-        const response = await postAIRecommendation(accessToken, data);
+        const response = await postScoreRecommendation(
+          buildScoreRecommendationRequest({
+            duration: data.duration,
+            transportation: data.transportation,
+            travel_purpose: data.travel_purpose,
+            companion: data.companion,
+            atmosphere: data.atmosphere ?? undefined,
+            activity_style: data.activity_style ?? undefined,
+            region: data.region ?? undefined,
+          }),
+        );
         return response;
       },
       onSuccess: async (response) => {
