@@ -1,6 +1,4 @@
-import postBookmark from "@/api/bookmarks/postBookmark";
 import { useAuthStore } from "@/store/login/useAuthStore";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, Text, View } from "react-native";
@@ -18,7 +16,7 @@ type KakaoMapWebViewMessage = {
   payload: {
     place_id: string | null;
     folder_id: string | null;
-    place: any;
+    place: IKakaoPlacePayload;
   };
 };
 
@@ -37,19 +35,16 @@ function isKakaoPlaceMessage(data: unknown): data is KakaoMapWebViewMessage {
     return false;
   }
 
-  const place = (payload as any).place;
+  const place = (payload as Partial<KakaoMapWebViewMessage["payload"]>).place;
   if (!place || typeof place !== "object") {
     return false;
   }
 
-  const hasLat = typeof place.lat === "number" || typeof place.latitude === "number";
-  const hasLng = typeof place.lng === "number" || typeof place.longitude === "number";
-
   return (
     typeof place.kakao_place_id === "string" &&
     typeof place.name === "string" &&
-    hasLat &&
-    hasLng &&
+    typeof place.latitude === "number" &&
+    typeof place.longitude === "number" &&
     typeof place.address === "string" &&
     typeof place.category === "string"
   );
@@ -92,8 +87,8 @@ export default function MapsScreen() {
     const mappedPayload: IKakaoPlacePayload = {
       kakao_place_id: place.kakao_place_id,
       name: place.name,
-      lat: place.lat ?? place.latitude,
-      lng: place.lng ?? place.longitude,
+      latitude: place.latitude,
+      longitude: place.longitude,
       address: place.address,
       category: place.category,
     };
