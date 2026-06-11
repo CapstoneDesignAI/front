@@ -1,6 +1,5 @@
 import getMissionDetailItem from "@/api/missions/getMissionDetailItem";
 import { useAuthStore } from "@/store/login/useAuthStore";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
@@ -36,17 +35,6 @@ export default function MissionDetailScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View className="gap-6">
-        <View className="h-[220px] items-center justify-center rounded-[24px] bg-[#F0F0F0]">
-          <MaterialCommunityIcons
-            name="image-outline"
-            size={42}
-            color="#A59A93"
-          />
-          <Text className="mt-2 text-[15px] font-medium text-gray-03">
-            사진 영역
-          </Text>
-        </View>
-
         <View className="gap-2">
           <Text className="text-[28px] font-black text-gray-01">
             {isMissionDetailLoading ? "미션 정보를 불러오는 중" : mission.title}

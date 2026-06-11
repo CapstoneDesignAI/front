@@ -1,4 +1,5 @@
 import getMissionDetailItem from "@/api/missions/getMissionDetailItem";
+import postImageUpload from "@/api/missions/postImageUpload";
 import postMissionVerify from "@/api/missions/postMissionVerify";
 import { useCurrentLocation } from "@/hooks/use-current-location";
 import { useAuthStore } from "@/store/login/useAuthStore";
@@ -33,7 +34,7 @@ export default function MissionVerificationScreen() {
   });
 
   const verifyMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!accessToken || !missionId || !coords) {
         throw new Error("미션 인증에 필요한 정보가 부족합니다.");
       }
@@ -42,19 +43,18 @@ export default function MissionVerificationScreen() {
         throw new Error("미션 인증 사진을 먼저 업로드해 주세요.");
       }
 
-      console.log(
-        missionId,
-        coords.latitude,
-        coords.longitude,
-        selectedImageUri,
-      );
+      // 1. 파일 업로드 (스토리지)
+      const { image_url } = await postImageUpload(accessToken, selectedImageUri);
 
+      if (!image_url) {
+        throw new Error("이미지 업로드에 실패했습니다.");
+      }
+
+      // 2. 미션 인증 요청 (JSON)
       return postMissionVerify(accessToken, missionId, {
         latitude: coords.latitude,
         longitude: coords.longitude,
-        image: {
-          uri: selectedImageUri,
-        },
+        image_url,
       });
     },
     onSuccess: async (response) => {

@@ -20,11 +20,11 @@ type IGetMissionListResponse = IGetMissionItemResponse[];
 type IPostMissionVerifyRequest = {
   latitude: number;
   longitude: number;
-  image: {
-    uri: string;
-    name?: string | null;
-    type?: string | null;
-  };
+  image_url: string;
+};
+
+type IPostImageUploadResponse = {
+  image_url: string;
 };
 
 type IPostMissionVerifyResponse = {

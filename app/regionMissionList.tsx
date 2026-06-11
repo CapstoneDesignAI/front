@@ -4,12 +4,12 @@ import StampCoupon from "@/components/history/StampCoupon";
 import { useAuthStore } from "@/store/login/useAuthStore";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
-import React from "react";
+import React, { useMemo } from "react";
 import { ScrollView, Text, View } from "react-native";
 
 const DEFAULT_REGION_ID = "1";
 
-const fallbackMissions = [
+const fallbackMissions: IGetMissionItemResponse[] = [
   {
     mission_id: "local-market-snack",
     title: "로컬 시장에서 간식 먹기",
@@ -47,6 +47,13 @@ export default function RegionMissionListScreen() {
 
   const missions = missionData?.length ? missionData : fallbackMissions;
 
+  const { availableMissions, completedMissions } = useMemo(() => {
+    return {
+      availableMissions: missions.filter((m) => !m.is_completed),
+      completedMissions: missions.filter((m) => m.is_completed),
+    };
+  }, [missions]);
+
   return (
     <ScrollView
       className="flex-1 bg-background"
@@ -60,39 +67,70 @@ export default function RegionMissionListScreen() {
           </Text>
         </View>
 
-        <View className="items-center gap-4">
+        <View className="items-center gap-6">
           <StampCoupon
             title="강원 고성 스탬프 쿠폰"
             regionId={selectedRegionId}
             isMissionPage={true}
           />
 
-          <View className="w-full gap-3">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-[18px] font-bold text-gray-01">
-                오늘의 미션
-              </Text>
-              <Text className="text-[13px] font-medium text-gray-03">
-                {isMissionsLoading ? "불러오는 중" : `${missions.length}개`}
-              </Text>
+          <View className="w-full gap-5">
+            <View className="gap-3">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-[18px] font-bold text-gray-01">
+                  진행 중인 미션
+                </Text>
+                <Text className="text-[13px] font-medium text-gray-03">
+                  {availableMissions.length}개
+                </Text>
+              </View>
+
+              {availableMissions.map((mission) => (
+                <MissionItem
+                  key={mission.mission_id}
+                  missionId={mission.mission_id}
+                  title={mission.title}
+                  difficulty={mission.difficulty}
+                  isCompleted={false}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/MissionDetail",
+                      params: { missionId: mission.mission_id },
+                    })
+                  }
+                />
+              ))}
+              {availableMissions.length === 0 && !isMissionsLoading && (
+                <View className="items-center py-4">
+                  <Text className="text-[14px] text-gray-03">
+                    모든 미션을 완료했습니다!
+                  </Text>
+                </View>
+              )}
             </View>
 
-            {missions.map((mission) => (
-              <MissionItem
-                key={mission.mission_id}
-                missionId={mission.mission_id}
-                title={mission.title}
-                rewardText={`사진 업로드 · 스탬프 ${mission.stamp_count}개`}
-                difficulty={mission.difficulty}
-                isCompleted={mission.is_completed}
-                onPress={() =>
-                  router.push({
-                    pathname: "/MissionDetail",
-                    params: { missionId: mission.mission_id },
-                  })
-                }
-              />
-            ))}
+            {completedMissions.length > 0 && (
+              <View className="gap-3">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-[18px] font-bold text-gray-01">
+                    완료한 미션
+                  </Text>
+                  <Text className="text-[13px] font-medium text-gray-03">
+                    {completedMissions.length}개
+                  </Text>
+                </View>
+
+                {completedMissions.map((mission) => (
+                  <MissionItem
+                    key={mission.mission_id}
+                    missionId={mission.mission_id}
+                    title={mission.title}
+                    difficulty={mission.difficulty}
+                    isCompleted={true}
+                  />
+                ))}
+              </View>
+            )}
           </View>
         </View>
       </View>

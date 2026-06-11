@@ -24,8 +24,8 @@ type IPostBookmarkPlace = {
 type IKakaoPlacePayload = {
   kakao_place_id: string;
   name: string;
-  latitude: number;
-  longitude: number;
+  lat: number;
+  lng: number;
   address: string;
   category: string;
 };
