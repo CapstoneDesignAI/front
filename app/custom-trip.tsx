@@ -305,28 +305,76 @@ export default function CustomTripScreen() {
         contentContainerClassName="grow px-6 pb-10 pt-5"
         showsVerticalScrollIndicator={false}
       >
-        <View className="mb-8 gap-3">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-[15px] font-bold text-main-green">
-              {currentStepIndex + 1} / {steps.length}
-            </Text>
-            <Text className="text-[13px] font-medium text-gray-03">
-              {completedCount}개 입력 완료
-            </Text>
-          </View>
-          <View className="flex-row gap-1.5">
-            {steps.map((step, index) => (
-              <View
-                key={step.key}
-                className={`h-2 flex-1 rounded-full ${
-                  index <= currentStepIndex ? "bg-main-green" : "bg-gray-04"
-                }`}
-              />
-            ))}
-          </View>
-        </View>
+        {!recommendation ? (
+          <>
+            <View className="mb-8 gap-3">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-[15px] font-bold text-main-green">
+                  {currentStepIndex + 1} / {steps.length}
+                </Text>
+                <Text className="text-[13px] font-medium text-gray-03">
+                  {completedCount}개 입력 완료
+                </Text>
+              </View>
+              <View className="flex-row gap-1.5">
+                {steps.map((step, index) => (
+                  <View
+                    key={step.key}
+                    className={`h-2 flex-1 rounded-full ${
+                      index <= currentStepIndex ? "bg-main-green" : "bg-gray-04"
+                    }`}
+                  />
+                ))}
+              </View>
+            </View>
 
-        {recommendation ? (
+            <View className="flex-1 gap-7">
+              <View className="gap-2">
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-[28px] font-black text-gray-01">
+                    {currentStep.title}
+                  </Text>
+                  {currentStep.optional ? (
+                    <Text className="rounded-full bg-main-light-orange px-2 py-1 text-[12px] font-bold text-gray-02">
+                      선택
+                    </Text>
+                  ) : null}
+                </View>
+                <Text className="text-[15px] leading-6 text-gray-02">
+                  {currentStep.description}
+                </Text>
+              </View>
+
+              <View className="gap-3">
+                {currentStep.options.map((option) => {
+                  const isSelected = selectedAnswer === option;
+
+                  return (
+                    <Pressable
+                      key={option}
+                      className={`min-h-[54px] justify-center rounded-[18px] border px-5 ${
+                        isSelected
+                          ? "border-main-green bg-main-light-orange"
+                          : "border-gray-04 bg-background"
+                      }`}
+                      onPress={() => handleSelectAnswer(option)}
+                    >
+                      <Text
+                        className={`text-[16px] ${
+                          isSelected
+                            ? "font-bold text-gray-01"
+                            : "font-medium text-gray-02"
+                        }`}
+                      >
+                        {option}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          </>
+        ) : (
           <View className="mb-8 gap-4">
             <View className="gap-2">
               <Text className="text-[26px] font-black text-gray-01">
@@ -338,82 +386,62 @@ export default function CustomTripScreen() {
             </View>
             <RecommendCard recommendation={recommendation} source="ai" />
           </View>
-        ) : null}
-
-        <View className="flex-1 gap-7">
-          <View className="gap-2">
-            <View className="flex-row items-center gap-2">
-              <Text className="text-[28px] font-black text-gray-01">
-                {currentStep.title}
-              </Text>
-              {currentStep.optional ? (
-                <Text className="rounded-full bg-main-light-orange px-2 py-1 text-[12px] font-bold text-gray-02">
-                  선택
-                </Text>
-              ) : null}
-            </View>
-            <Text className="text-[15px] leading-6 text-gray-02">
-              {currentStep.description}
-            </Text>
-          </View>
-
-          <View className="gap-3">
-            {currentStep.options.map((option) => {
-              const isSelected = selectedAnswer === option;
-
-              return (
-                <Pressable
-                  key={option}
-                  className={`min-h-[54px] justify-center rounded-[18px] border px-5 ${
-                    isSelected
-                      ? "border-main-green bg-main-light-orange"
-                      : "border-gray-04 bg-background"
-                  }`}
-                  onPress={() => handleSelectAnswer(option)}
-                >
-                  <Text
-                    className={`text-[16px] ${
-                      isSelected
-                        ? "font-bold text-gray-01"
-                        : "font-medium text-gray-02"
-                    }`}
-                  >
-                    {option}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
+        )}
 
         <View className="mt-8 flex-row items-center justify-between gap-3">
-          <Pressable
-            className="h-[52px] flex-1 items-center justify-center rounded-[16px] border border-gray-04 bg-background"
-            onPress={goBack}
-          >
-            <Text className="text-[16px] font-bold text-gray-02">
-              {isFirstStep ? "닫기" : "이전"}
-            </Text>
-          </Pressable>
-          <Button
-            title={
-              isLastStep
-                ? isRecommendationPending
-                  ? "추천 받는 중"
-                  : AIrequest
-                    ? "다시 추천 받기"
-                    : "추천 받기"
-                : "다음"
-            }
-            size="small"
-            color={
-              (selectedAnswer || currentStep.optional) &&
-              !isRecommendationPending
-                ? "gradient"
-                : "disabled"
-            }
-            onPress={goNext}
-          />
+          {recommendation ? (
+            <>
+              <Pressable
+                className="h-[52px] flex-1 items-center justify-center rounded-[16px] border border-gray-04 bg-background"
+                onPress={() => {
+                  if (AIrequest) {
+                    AIRecommendation(AIrequest);
+                  }
+                }}
+                disabled={isRecommendationPending}
+              >
+                <Text className="text-[16px] font-bold text-gray-02">
+                  {isRecommendationPending ? "추천 받는 중" : "다른 추천 받기"}
+                </Text>
+              </Pressable>
+              <Button
+                title="홈으로 가기"
+                size="small"
+                color="gradient"
+                onPress={() => router.replace("/(tabs)/home")}
+              />
+            </>
+          ) : (
+            <>
+              <Pressable
+                className="h-[52px] flex-1 items-center justify-center rounded-[16px] border border-gray-04 bg-background"
+                onPress={goBack}
+              >
+                <Text className="text-[16px] font-bold text-gray-02">
+                  {isFirstStep ? "닫기" : "이전"}
+                </Text>
+              </Pressable>
+              <Button
+                title={
+                  isLastStep
+                    ? isRecommendationPending
+                      ? "추천 받는 중"
+                      : AIrequest
+                        ? "다시 추천 받기"
+                        : "추천 받기"
+                    : "다음"
+                }
+                size="small"
+                color={
+                  (selectedAnswer || currentStep.optional) &&
+                  !isRecommendationPending
+                    ? "gradient"
+                    : "disabled"
+                }
+                onPress={goNext}
+              />
+            </>
+          )}
         </View>
 
         {isRecommendationPending ? (
