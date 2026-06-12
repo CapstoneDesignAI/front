@@ -92,6 +92,7 @@ function SavedTripCard({
   count,
   imageUrl,
   onDelete,
+  firstPlaceImageUrl,
 }: {
   id: string;
   title: string;
@@ -100,13 +101,16 @@ function SavedTripCard({
   count: number;
   imageUrl?: string | null;
   onDelete: () => void;
+  firstPlaceImageUrl?: string | null;
 }) {
+  const resolvedImageUrl = imageUrl ?? firstPlaceImageUrl;
+
   return (
     <View className="overflow-hidden rounded-[24px] border border-gray-04 bg-white shadow-sm">
       <View className="relative h-[86px] bg-[#D6E8F0]">
-        {imageUrl ? (
+        {resolvedImageUrl ? (
           <ExpoImage
-            source={{ uri: imageUrl }}
+            source={{ uri: resolvedImageUrl }}
             contentFit="cover"
             style={{ height: "100%", width: "100%" }}
           />
@@ -297,6 +301,7 @@ export default function HistoryScreen() {
                     summary={getRouteSummary(route)}
                     count={route.place_count ?? route.places?.length ?? 0}
                     imageUrl={route.image_url}
+                    firstPlaceImageUrl={route.places?.[0]?.image_url}
                     onDelete={() => removeRoute(id)}
                   />
                 );

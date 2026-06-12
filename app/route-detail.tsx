@@ -75,6 +75,27 @@ const formatMinutes = (minutes?: number) => {
 const getPlaceCostText = (place: IPlaceItem) =>
   formatCostRange(place.estimated_cost_min, place.estimated_cost_max);
 
+const compactUniqueStrings = (values: (string | null | undefined)[]) => {
+  const seen = new Set<string>();
+
+  return values.reduce<string[]>((result, value) => {
+    const trimmedValue = value?.trim();
+
+    if (!trimmedValue || seen.has(trimmedValue)) {
+      return result;
+    }
+
+    seen.add(trimmedValue);
+    return [...result, trimmedValue];
+  }, []);
+};
+
+const getRotatingTagTone = (index: number): "green" | "orange" | "blue" => {
+  const tones = ["green", "orange", "blue"] as const;
+
+  return tones[index % tones.length];
+};
+
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   if (!value) {
     return null;
@@ -86,6 +107,39 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
       <Text className="min-w-0 flex-1 text-right text-[13px] font-bold text-gray-01">
         {value}
       </Text>
+    </View>
+  );
+}
+
+function SummaryBadge({ title }: { title: string }) {
+  return (
+    <View className="rounded-[12px] border border-[#DCEAD7] bg-[#F7FAF5] px-[12px] py-[8px]">
+      <Text className="text-[12px] font-bold text-main-green">{title}</Text>
+    </View>
+  );
+}
+
+function SectionCard({ children }: { children: React.ReactNode }) {
+  return (
+    <View className="rounded-[20px] border border-gray-04/70 bg-white px-[20px] py-[18px]">
+      {children}
+    </View>
+  );
+}
+
+function SectionHeader({
+  icon,
+  title,
+}: {
+  icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
+  title: string;
+}) {
+  return (
+    <View className="flex-row items-center gap-[8px]">
+      <View className="h-[28px] w-[28px] items-center justify-center rounded-full bg-[#EEF4EA]">
+        <MaterialCommunityIcons name={icon} size={16} color="#739E6B" />
+      </View>
+      <Text className="text-[17px] font-black text-gray-01">{title}</Text>
     </View>
   );
 }
@@ -129,6 +183,17 @@ const formatPayment = (payment?: number) => {
 
   return `${payment.toLocaleString("ko-KR")}원`;
 };
+
+const getSegmentDistanceText = (item: IRouteTransportationItem) =>
+  item.distance || item.distanceText || null;
+
+const getSegmentTimeText = (item: IRouteTransportationItem) =>
+  item.transferTimeText ||
+  item.travelTimeText ||
+  item.moveTimeText ||
+  item.durationText ||
+  item.timeText ||
+  null;
 
 type TransportationBottomSheetProps = {
   hasAccessToken: boolean;
@@ -281,6 +346,8 @@ function TransportationBottomSheet({
                     {items.length > 0 ? (
                       items.map((item, index) => {
                         const paymentText = formatPayment(item.payment);
+                        const distanceText = getSegmentDistanceText(item);
+                        const timeText = getSegmentTimeText(item);
 
                         return (
                           <View
@@ -305,18 +372,58 @@ function TransportationBottomSheet({
                                     {item.detailText}
                                   </Text>
                                 ) : null}
+                                </View>
                               </View>
-                            </View>
+
+                            {distanceText || timeText ? (
+                              <View className="mt-[12px] flex-row gap-[8px]">
+                                {distanceText ? (
+                                  <View className="min-w-0 flex-1 rounded-[14px] bg-[#F7F3EF] px-[12px] py-[10px]">
+                                    <View className="flex-row items-center">
+                                      <MaterialCommunityIcons
+                                        name="map-marker-distance"
+                                        size={16}
+                                        color="#739E6B"
+                                      />
+                                      <Text className="ml-[5px] text-[11px] font-bold text-gray-03">
+                                        장소간 거리
+                                      </Text>
+                                    </View>
+                                    <Text
+                                      className="mt-[4px] text-[13px] font-black text-gray-01"
+                                      numberOfLines={1}
+                                    >
+                                      {distanceText}
+                                    </Text>
+                                  </View>
+                                ) : null}
+
+                                {timeText ? (
+                                  <View className="min-w-0 flex-1 rounded-[14px] bg-[#F7F3EF] px-[12px] py-[10px]">
+                                    <View className="flex-row items-center">
+                                      <MaterialCommunityIcons
+                                        name="clock-outline"
+                                        size={16}
+                                        color="#F08057"
+                                      />
+                                      <Text className="ml-[5px] text-[11px] font-bold text-gray-03">
+                                        이동 시간
+                                      </Text>
+                                    </View>
+                                    <Text
+                                      className="mt-[4px] text-[13px] font-black text-gray-01"
+                                      numberOfLines={1}
+                                    >
+                                      {timeText}
+                                    </Text>
+                                  </View>
+                                ) : null}
+                              </View>
+                            ) : null}
 
                             <View className="mt-[12px] flex-row flex-wrap gap-[8px]">
                               {item.transport ? (
                                 <Tag title={item.transport} tone="blue" />
-                              ) : null}
-                              {item.transferTimeText ? (
-                                <Tag
-                                  title={item.transferTimeText}
-                                  tone="orange"
-                                />
                               ) : null}
                               {typeof item.transferCount === "number" ? (
                                 <Tag
@@ -326,9 +433,6 @@ function TransportationBottomSheet({
                               ) : null}
                               {paymentText ? (
                                 <Tag title={paymentText} tone="orange" />
-                              ) : null}
-                              {item.distance ? (
-                                <Tag title={item.distance} tone="green" />
                               ) : null}
                             </View>
                           </View>
@@ -419,6 +523,7 @@ export default function RouteDetailScreen() {
   const regionLabel =
     card?.region_label ?? [route?.sido, route?.sigungu].filter(Boolean).join(" ");
   const createdDate = formatDate(route?.created_at);
+  const savedDate = formatDate(route?.saved_at);
   const headlineText =
     route?.subtitle ??
     card?.summary ??
@@ -426,22 +531,40 @@ export default function RouteDetailScreen() {
     route?.total_distance_text ??
     route?.estimated_time ??
     "AI가 고른 장소 순서대로 이어지는 추천 코스";
-  const summaryMetrics = [
+  const summaryMetrics = compactUniqueStrings([
     route?.summary?.contribution_label,
+    card?.estimated_duration_text,
     route?.summary?.duration_text,
+    card?.estimated_cost_text,
     route?.summary?.cost_range_text,
+    card?.local_consumption_text,
     route?.summary?.local_consumption_text,
+    ...(card?.metric_badges ?? []),
     typeof route?.contribution_score === "number"
       ? `지역 기여 ${route.contribution_score}점`
       : null,
-  ].filter((metric): metric is string => Boolean(metric));
+  ]);
+  const summaryDescription =
+    route?.ai_reason_detail?.overview ??
+    card?.ai_reason_summary ??
+    route?.ai_reason ??
+    headlineText;
   const reasonDetail = route?.ai_reason_detail;
   const placeCount = route?.place_count ?? places.length;
   const routeImageUrl = route?.image_url ?? card?.thumbnail_url ?? places[0]?.image_url;
-  const routeTags = [
+  const topTags = compactUniqueStrings([
+    regionLabel,
+    route?.theme_label ?? card?.theme_label,
+    placeCount ? `장소 ${placeCount}곳` : null,
+    route?.mobility?.label ??
+      route?.transport_label ??
+      route?.mobility?.recommended_transport,
+  ]);
+  const routeTags = compactUniqueStrings([
     ...(route?.route_badges ?? []),
     ...(route?.tags ?? []),
-  ].filter(Boolean);
+    ...(card?.tags ?? []),
+  ]).filter((tag) => !topTags.includes(tag));
   const overviewRows = [
     {
       label: "지역",
@@ -449,11 +572,19 @@ export default function RouteDetailScreen() {
     },
     {
       label: "테마",
-      value: route?.theme_label,
+      value: route?.theme_label ?? card?.theme_label,
+    },
+    {
+      label: "장소",
+      value: placeCount ? `${placeCount}곳` : null,
     },
     {
       label: "여행 시간",
-      value: route?.travel_time_label ?? formatMinutes(route?.estimated_duration_minutes),
+      value:
+        route?.travel_time_label ??
+        card?.estimated_duration_text ??
+        route?.estimated_time ??
+        formatMinutes(route?.estimated_duration_minutes),
     },
     {
       label: "이동 수단",
@@ -465,17 +596,31 @@ export default function RouteDetailScreen() {
     },
     {
       label: "총 거리",
-      value: route?.total_distance_text,
+      value: route?.total_distance_text ?? card?.route_preview_text,
+    },
+    {
+      label: "예상 체류",
+      value: formatMinutes(route?.total_stay_minutes),
     },
     {
       label: "예상 비용",
       value:
         route?.summary?.cost_range_text ??
+        card?.estimated_cost_text ??
         formatCostRange(route?.estimated_cost_min, route?.estimated_cost_max),
     },
     {
+      label: "지역 소비",
+      value:
+        route?.summary?.local_consumption_text ??
+        card?.local_consumption_text ??
+        (route?.local_consumption_count
+          ? `${route.local_consumption_count}곳 포함`
+          : null),
+    },
+    {
       label: "저장일",
-      value: createdDate,
+      value: savedDate ?? createdDate,
     },
   ];
 
@@ -520,107 +665,111 @@ export default function RouteDetailScreen() {
     <View className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
-        contentContainerClassName="px-6 pb-[108px] pt-4"
+        contentContainerClassName="px-5 pb-[108px] pt-4"
         showsVerticalScrollIndicator={false}
       >
-        <View className="gap-[32px]">
-          <View className="gap-[8px]">
-            <Text className="text-[28px] font-black text-gray-01">
-              추천 동선
-            </Text>
-            <Text className="text-[14px] font-medium text-gray-02">
-              AI가 고른 이유와 장소 순서를 확인해요
-            </Text>
+        <View className="gap-[22px]">
+          <View className="flex-row items-start justify-between">
+            <View className="flex-1 gap-[8px]">
+              <Text className="text-[26px] font-black text-gray-01">
+                동선 상세
+              </Text>
+              <Text className="text-[14px] font-medium text-gray-02">
+                장소 순서와 추천 이유를 한눈에 확인해요
+              </Text>
+            </View>
+            {createdDate ? (
+              <View className="mt-1 rounded-full border border-gray-04 bg-white px-3 py-[6px]">
+                <Text className="text-[11px] font-bold text-gray-02">
+                  {createdDate}
+                </Text>
+              </View>
+            ) : null}
           </View>
 
-          <View className="overflow-hidden rounded-[28px] bg-[#315C32]">
-            {routeImageUrl ? (
-              <View className="h-[150px] w-full">
+          <View className="overflow-hidden rounded-[24px] border border-gray-04/70 bg-white">
+            <View className="h-[188px] w-full bg-[#EEF4EA]">
+              {routeImageUrl ? (
                 <ExpoImage
                   source={{ uri: routeImageUrl }}
                   contentFit="cover"
                   style={{ height: "100%", width: "100%" }}
                 />
-              </View>
-            ) : null}
-            <View className="px-6 py-[28px]">
-            <Text
-              className="text-[26px] font-black text-white"
-              numberOfLines={2}
-            >
-              {route.title}
-            </Text>
-            <Text className="mt-[8px] text-[13px] font-medium leading-5 text-white">
-              {headlineText}
-            </Text>
-
-            <View className="mt-[20px] flex-row flex-wrap gap-[8px]">
-              {regionLabel ? (
-                <Tag
-                  title={regionLabel}
-                  tone="green"
-                  variant="filled"
-                  size="medium"
-                />
-              ) : null}
-              <Tag
-                title={route.theme_label ?? route.card?.theme_label ?? "태그"}
-                tone="orange"
-                variant="filled"
-                size="medium"
-              />
-              <Tag
-                title={`장소 ${placeCount}곳`}
-                tone="blue"
-                variant="filled"
-                size="medium"
-              />
-              {route.mobility?.label ? (
-                <Tag
-                  title={route.mobility.label}
-                  tone="green"
-                  variant="filled"
-                  size="medium"
-                />
-              ) : null}
+              ) : (
+                <View className="h-full w-full items-center justify-center">
+                  <MaterialCommunityIcons
+                    name="map-marker-path"
+                    size={36}
+                    color="#739E6B"
+                  />
+                </View>
+              )}
             </View>
+
+            <View className="px-5 py-[22px]">
+              <Text
+                className="text-[25px] font-black leading-[32px] text-gray-01"
+                numberOfLines={2}
+              >
+                {route.title}
+              </Text>
+              <Text className="mt-[8px] text-[13px] font-medium leading-5 text-gray-02">
+                {headlineText}
+              </Text>
+
+              {topTags.length ? (
+                <View className="mt-[18px] flex-row flex-wrap gap-[8px]">
+                  {topTags.slice(0, 4).map((tag, index) => (
+                    <Tag
+                      key={tag}
+                      title={tag}
+                      tone={
+                        index === 1 ? "orange" : index === 2 ? "blue" : "green"
+                      }
+                      variant="soft"
+                      size="medium"
+                    />
+                  ))}
+                </View>
+              ) : null}
             </View>
           </View>
 
           {routeTags.length ? (
-            <View className="flex-row flex-wrap gap-[8px]">
-              {routeTags.slice(0, 8).map((tag) => (
-                <Tag key={tag} title={tag} tone="gray" variant="soft" />
-              ))}
-            </View>
+            <SectionCard>
+              <SectionHeader icon="tag-multiple-outline" title="동선 태그" />
+              <View className="mt-[12px] flex-row flex-wrap gap-[8px]">
+                {routeTags.slice(0, 8).map((tag, index) => (
+                  <Tag
+                    key={tag}
+                    title={tag}
+                    tone={getRotatingTagTone(index)}
+                    variant="soft"
+                  />
+                ))}
+              </View>
+            </SectionCard>
           ) : null}
 
-          {summaryMetrics.length ? (
-            <View className="flex-row flex-wrap gap-[10px]">
-              {summaryMetrics.map((metric) => (
-                <View
-                  key={metric}
-                  className="rounded-[16px] border border-gray-04 bg-white px-[14px] py-[10px]"
-                >
-                  <Text className="text-[12px] font-bold text-main-green">
-                    {metric}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          <View className="rounded-[22px] border border-gray-04 bg-white px-[22px] py-[20px]">
-            <Text className="text-[17px] font-black text-gray-01">
-              동선 요약
+          <SectionCard>
+            <SectionHeader icon="clipboard-text-outline" title="동선 요약" />
+            <Text className="mt-[10px] text-[13px] leading-5 text-gray-02">
+              {summaryDescription}
             </Text>
+            {summaryMetrics.length ? (
+              <View className="mt-[12px] flex-row flex-wrap gap-[8px]">
+                {summaryMetrics.slice(0, 6).map((metric) => (
+                  <SummaryBadge key={metric} title={metric} />
+                ))}
+              </View>
+            ) : null}
             <View className="mt-[14px] gap-[10px]">
               {overviewRows.map((row) => (
                 <InfoRow key={row.label} label={row.label} value={row.value} />
               ))}
             </View>
             {route.contribution_info ? (
-              <View className="mt-[16px] rounded-[16px] bg-[#FDFFFB] px-[14px] py-[12px]">
+              <View className="mt-[16px] rounded-[16px] bg-[#F7FAF5] px-[14px] py-[12px]">
                 <View className="flex-row items-center justify-between gap-[10px]">
                   <Text className="text-[13px] font-black text-main-green">
                     {route.contribution_info.label}
@@ -634,14 +783,14 @@ export default function RouteDetailScreen() {
                 </Text>
               </View>
             ) : null}
-          </View>
+          </SectionCard>
 
-          <View className="rounded-[22px] border border-gray-04 bg-white px-[22px] py-[20px]">
-            <Text className="text-[17px] font-black text-gray-01">
-              AI 추천 이유
-            </Text>
+          <SectionCard>
+            <SectionHeader icon="star-four-points-outline" title="AI 추천 이유" />
             <Text className="mt-[10px] text-[13px] leading-5 text-gray-02">
-              {route.ai_reason ?? "방문하기 좋은 장소를 순서대로 구성했어요."}
+              {route.ai_reason ??
+                route.description ??
+                "방문하기 좋은 장소를 순서대로 구성했어요."}
             </Text>
             {reasonDetail ? (
               <View className="mt-[14px] gap-[10px]">
@@ -660,22 +809,25 @@ export default function RouteDetailScreen() {
                 ]
                   .filter(Boolean)
                   .map((text) => (
-                    <Text
+                    <View
                       key={text}
-                      className="text-[12px] leading-5 text-gray-02"
+                      className="rounded-[14px] bg-[#FAFAFA] px-[13px] py-[10px]"
                     >
-                      {text}
-                    </Text>
+                      <Text className="text-[12px] leading-5 text-gray-02">
+                        {text}
+                      </Text>
+                    </View>
                   ))}
               </View>
             ) : null}
-          </View>
+          </SectionCard>
 
           {route.region_story ? (
-            <View className="rounded-[22px] border border-[#D9E3D3] bg-[#FDFFFB] px-[22px] py-[20px]">
-              <Text className="text-[17px] font-black text-gray-01">
-                {route.region_story.title}
-              </Text>
+            <SectionCard>
+              <SectionHeader
+                icon="map-marker-radius-outline"
+                title={route.region_story.title}
+              />
               <Text className="mt-[8px] text-[13px] leading-5 text-gray-02">
                 {route.region_story.summary}
               </Text>
@@ -688,45 +840,60 @@ export default function RouteDetailScreen() {
               <Text className="mt-[8px] text-[12px] leading-5 text-gray-02">
                 {route.region_story.local_tip}
               </Text>
-            </View>
+            </SectionCard>
           ) : null}
 
           {route.local_consumption_points?.length ? (
-            <View className="rounded-[22px] border border-[#E8D6BA] bg-white px-[22px] py-[20px]">
-              <Text className="text-[17px] font-black text-gray-01">
-                지역 소비 포인트
+            <SectionCard>
+              <SectionHeader
+                icon="storefront-outline"
+                title="지역 소비 포인트"
+              />
+              <Text className="mt-[8px] text-[12px] leading-5 text-gray-02">
+                지역 가게와 체험을 자연스럽게 들를 수 있는 지점을 모았어요.
               </Text>
-              <View className="mt-[12px] gap-[10px]">
+              <View className="mt-[14px] gap-[10px]">
                 {route.local_consumption_points.map((point, index) => (
                   <View
                     key={`${point.place_id ?? point.place_name ?? point.name}-${index}`}
-                    className="rounded-[16px] bg-[#FFF8F3] px-[14px] py-[12px]"
+                    className="flex-row rounded-[16px] border border-[#F3DDCF] bg-[#FFF8F3] px-[14px] py-[12px]"
                   >
-                    <Text className="text-[13px] font-black text-main-orange">
-                      {point.place_name ?? point.name ?? "추천 장소"}
-                    </Text>
-                    <Text className="mt-[5px] text-[12px] leading-5 text-gray-02">
-                      {point.reason}
-                    </Text>
+                    <View className="h-[26px] w-[26px] items-center justify-center rounded-full bg-main-orange">
+                      <Text className="text-[11px] font-black text-white">
+                        {index + 1}
+                      </Text>
+                    </View>
+                    <View className="ml-[10px] min-w-0 flex-1">
+                      <Text
+                        className="text-[13px] font-black text-main-orange"
+                        numberOfLines={1}
+                      >
+                        {point.place_name ?? point.name ?? "추천 장소"}
+                      </Text>
+                      <Text className="mt-[5px] text-[12px] leading-5 text-gray-02">
+                        {point.reason}
+                      </Text>
+                    </View>
                   </View>
                 ))}
               </View>
-            </View>
+            </SectionCard>
           ) : null}
 
-          <View className="gap-[10px]">
+          <View className="gap-[12px]">
+            <SectionHeader icon="map-marker-path" title="방문 순서" />
             {places.map((place, index) => (
               <View
                 key={place.place_id ?? `${place.name}-${index}`}
-                className="min-h-[118px] flex-row items-center rounded-[20px] border border-gray-04 bg-white px-[18px] py-[12px]"
+                className="min-h-[96px] flex-row items-start rounded-[18px] border border-gray-04/70 bg-white px-[14px] py-[14px]"
               >
-                <View className="h-[36px] w-[36px] items-center justify-center rounded-full bg-main-green">
+                <View className="mt-[2px] h-[32px] w-[32px] items-center justify-center rounded-full bg-main-green">
                   <Text className="text-[15px] font-bold text-white">
                     {getPlaceOrder(place) || index + 1}
                   </Text>
                 </View>
 
-                <View className="ml-[14px] min-w-0 flex-1">
+                <View className="ml-[12px] min-w-0 flex-1">
                   <View className="flex-row items-baseline gap-[6px]">
                     <Text
                       className="text-[16px] font-black text-gray-01"
@@ -790,8 +957,12 @@ export default function RouteDetailScreen() {
                   ) : null}
                   {place.tags?.length ? (
                     <View className="mt-[7px] flex-row flex-wrap gap-[6px]">
-                      {place.tags.slice(0, 3).map((tag) => (
-                        <Tag key={tag} title={tag} tone="gray" />
+                      {place.tags.slice(0, 3).map((tag, tagIndex) => (
+                        <Tag
+                          key={tag}
+                          title={tag}
+                          tone={getRotatingTagTone(tagIndex)}
+                        />
                       ))}
                     </View>
                   ) : null}
@@ -802,15 +973,13 @@ export default function RouteDetailScreen() {
           </View>
 
           {route.route_legs?.length ? (
-            <View className="rounded-[22px] border border-gray-04 bg-white px-[22px] py-[20px]">
-              <Text className="text-[17px] font-black text-gray-01">
-                이동 거리
-              </Text>
+            <SectionCard>
+              <SectionHeader icon="map-marker-distance" title="이동 거리" />
               <View className="mt-[12px] gap-[10px]">
                 {route.route_legs.map((leg) => (
                   <View
                     key={`${leg.from_place_id}-${leg.to_place_id}-${leg.order}`}
-                    className="flex-row items-center"
+                    className="flex-row items-center rounded-[14px] bg-[#FAFAFA] px-[12px] py-[10px]"
                   >
                     <Text
                       className="min-w-0 flex-1 text-[12px] font-medium text-gray-02"
@@ -824,12 +993,12 @@ export default function RouteDetailScreen() {
                   </View>
                 ))}
               </View>
-            </View>
+            </SectionCard>
           ) : null}
         </View>
       </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 bg-background px-6 pb-6 pt-3">
+      <View className="absolute bottom-0 left-0 right-0 border-t border-gray-04/70 bg-background px-5 pb-6 pt-3">
         {isSavedRouteDetail ? (
           <Pressable
             className="h-[48px] flex-row items-center justify-center rounded-[14px] bg-main-blue"

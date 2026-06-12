@@ -122,7 +122,7 @@ export default function MyScreen() {
 
         <MyProfileCard
           nickname={nickname}
-          profileImageUri={userProfile?.profile_img}
+          profileImageUri={userProfile?.profile_img || (userProfile as any)?.profile_image || (userProfile as any)?.image_url}
           isLoading={isLoading}
         />
 

@@ -211,8 +211,10 @@ interface IPostAIRecommendationResponse {
   detail_api_path?: string;
   save_api_path?: string;
   created_at?: string;
+  saved_at?: string;
   description?: string | null;
   tags?: string[];
+  image_url?: string | null;
   places: IPlaceItem[];
 }
 
@@ -275,6 +277,11 @@ interface IRouteTransportationItem {
   payment?: number;
   transport?: string;
   distance?: string;
+  distanceText?: string;
+  durationText?: string;
+  moveTimeText?: string;
+  timeText?: string;
+  travelTimeText?: string;
   detailText?: string;
 }
 
