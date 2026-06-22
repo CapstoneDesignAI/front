@@ -55,6 +55,8 @@ type IBookmarkedPlaceItem = {
   address: string;
   image_url?: string | null;
   category: string;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 type IGetBookmarkedPlacesResponse = IBookmarkedPlaceItem[];

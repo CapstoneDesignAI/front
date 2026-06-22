@@ -104,9 +104,14 @@ export default function BottomSheet({
   const places = useMemo(() => bookmarkedPlaces ?? [], [bookmarkedPlaces]);
 
   const invalidateFolders = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: ["BOOKMARK_FOLDERS", accessToken],
-    });
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ["BOOKMARK_FOLDERS", accessToken],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["BOOKMARKED_PLACES", accessToken],
+      }),
+    ]);
   };
 
   const invalidatePlaces = async (folderId: string) => {

@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import React, { useMemo } from "react";
 import { Text, View } from "react-native";
 import Button from "../buttons/Button";
+import { formatAcquiredDate } from "./formatAcquiredDate";
 
 type StampCouponProps = {
   title?: string;
@@ -32,16 +33,20 @@ export default function StampCoupon({
   const accessToken = useAuthStore((state) => state.accessToken);
 
   const { data: stampData } = useQuery({
-    queryKey: ["STAMPS", regionId, accessToken],
+    queryKey: ["STAMPS", accessToken, regionId],
     queryFn: () => getStamps(accessToken, regionId),
-    enabled: Boolean(accessToken && regionId),
+    enabled: Boolean(accessToken),
     retry: false,
   });
+  const selectedStampData = stampData?.find(
+    (stamp) => String(stamp.region_id) === String(regionId),
+  ) ?? stampData?.[0];
 
   const resolvedCompletedCount =
-    completedCount ?? stampData?.collected_stamps ?? 8;
-  const resolvedTotalCount = totalCount ?? stampData?.total_stamps ?? 10;
-  const resolvedRewardText = rewardText ?? stampData?.next_reward_text;
+    completedCount ?? selectedStampData?.collected_stamps ?? 0;
+  const resolvedTotalCount = totalCount ?? selectedStampData?.total_stamps ?? 10;
+  const resolvedRewardText = rewardText ?? selectedStampData?.next_reward_text;
+  const updatedDateText = formatAcquiredDate(selectedStampData?.updated_at);
 
   const safeTotalCount = Math.min(
     Math.max(resolvedTotalCount, 1),
@@ -73,10 +78,13 @@ export default function StampCoupon({
     >
       <View className="gap-1">
         <Text className="text-[22px] font-black text-gray-01" numberOfLines={1}>
-          {title}
+          {selectedStampData?.region_name
+            ? `${selectedStampData.region_name} 스탬프 쿠폰`
+            : title}
         </Text>
         <Text className="text-[13px] font-medium text-gray-03">
           {safeCompletedCount}개 수집 완료
+          {updatedDateText ? ` · ${updatedDateText}` : ""}
         </Text>
       </View>
 

@@ -5,7 +5,7 @@ export default async function getMissionsList(
   region_id: string,
 ) {
   const data = await api.get<IGetMissionListResponse>({
-    endpoint: `/missions/${region_id}`,
+    endpoint: `/missions?region_id=${encodeURIComponent(region_id)}`,
     authorization: accessToken,
   });
   return data;

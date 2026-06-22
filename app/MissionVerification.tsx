@@ -1,6 +1,7 @@
 import getMissionDetailItem from "@/api/missions/getMissionDetailItem";
 import postImageUpload from "@/api/missions/postImageUpload";
 import postMissionVerify from "@/api/missions/postMissionVerify";
+import { ApiError } from "@/_lib/fetcher";
 import { useCurrentLocation } from "@/hooks/use-current-location";
 import { useAuthStore } from "@/store/login/useAuthStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -15,6 +16,31 @@ import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 cssInterop(ExpoImage, {
   className: "style",
 });
+
+const createVerificationError = (message: string, code: string) => {
+  const error = new Error(message);
+  error.name = code;
+  return error;
+};
+
+const getVerificationFailureTitle = (error: unknown) => {
+  const code =
+    error instanceof ApiError
+      ? error.code
+      : error instanceof Error
+        ? error.name
+        : undefined;
+
+  if (code === "LOCATION_VERIFICATION_FAILED") {
+    return "위치 인증 실패";
+  }
+
+  if (code === "PHOTO_VERIFICATION_FAILED") {
+    return "사진 인증 실패";
+  }
+
+  return "미션 인증 실패";
+};
 
 export default function MissionVerificationScreen() {
   const accessToken = useAuthStore((state) => state.accessToken);
@@ -40,14 +66,20 @@ export default function MissionVerificationScreen() {
       }
 
       if (!selectedImageUri) {
-        throw new Error("미션 인증 사진을 먼저 업로드해 주세요.");
+        throw createVerificationError(
+          "미션 인증 사진을 먼저 업로드해 주세요.",
+          "PHOTO_VERIFICATION_FAILED",
+        );
       }
 
       // 1. 파일 업로드 (스토리지)
       const { image_url } = await postImageUpload(accessToken, selectedImageUri);
 
       if (!image_url) {
-        throw new Error("이미지 업로드에 실패했습니다.");
+        throw createVerificationError(
+          "이미지 업로드에 실패했습니다.",
+          "PHOTO_VERIFICATION_FAILED",
+        );
       }
 
       // 2. 미션 인증 요청 (JSON)
@@ -66,7 +98,7 @@ export default function MissionVerificationScreen() {
     },
     onError: (error) => {
       Alert.alert(
-        "미션 인증 실패",
+        getVerificationFailureTitle(error),
         error instanceof Error ? error.message : "다시 시도해 주세요.",
       );
     },

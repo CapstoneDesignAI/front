@@ -19,6 +19,12 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { WebView } from "react-native-webview";
+import type { WebView as WebViewType } from "react-native-webview";
+
+const KAKAO_MAP_BASE_URL =
+  process.env.EXPO_PUBLIC_KAKAO_MAP_URL ??
+  "https://capstone-kakao-map.vercel.app/";
 
 const getPlaceOrder = (place: IPlaceItem) =>
   place.order ?? place.visit_order ?? 0;
@@ -72,9 +78,6 @@ const formatMinutes = (minutes?: number) => {
   return restMinutes ? `${hours}시간 ${restMinutes}분` : `${hours}시간`;
 };
 
-const getPlaceCostText = (place: IPlaceItem) =>
-  formatCostRange(place.estimated_cost_min, place.estimated_cost_max);
-
 const compactUniqueStrings = (values: (string | null | undefined)[]) => {
   const seen = new Set<string>();
 
@@ -95,6 +98,16 @@ const getRotatingTagTone = (index: number): "green" | "orange" | "blue" => {
 
   return tones[index % tones.length];
 };
+
+const filterVisibleScoreReasons = (scoreReasons?: string[]) =>
+  scoreReasons?.filter((reason) => {
+    const normalizedReason = reason.toLowerCase();
+
+    return (
+      !normalizedReason.includes("theme_match") &&
+      !normalizedReason.includes("transport_match")
+    );
+  }) ?? [];
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   if (!value) {
@@ -184,8 +197,39 @@ const formatPayment = (payment?: number) => {
   return `${payment.toLocaleString("ko-KR")}원`;
 };
 
+const getTotalPaymentText = (
+  transportation?: IGetRouteTransportationResponse,
+  items: IRouteTransportationItem[] = [],
+) => {
+  const explicitPaymentText =
+    transportation?.totalPaymentText ?? transportation?.totalFareText;
+
+  if (explicitPaymentText) {
+    return explicitPaymentText;
+  }
+
+  const explicitPayment =
+    transportation?.totalPayment ?? transportation?.totalFare;
+
+  if (typeof explicitPayment === "number") {
+    return formatPayment(explicitPayment);
+  }
+
+  const totalPayment = items.reduce(
+    (sum, item) => sum + (typeof item.payment === "number" ? item.payment : 0),
+    0,
+  );
+
+  return totalPayment > 0 ? formatPayment(totalPayment) : null;
+};
+
 const getSegmentDistanceText = (item: IRouteTransportationItem) =>
-  item.distance || item.distanceText || null;
+  item.distance ||
+  item.distanceText ||
+  item.distance_text ||
+  item.distanceFromPreviousText ||
+  item.distance_from_previous_text ||
+  null;
 
 const getSegmentTimeText = (item: IRouteTransportationItem) =>
   item.transferTimeText ||
@@ -215,6 +259,7 @@ function TransportationBottomSheet({
   visible,
 }: TransportationBottomSheetProps) {
   const insets = useSafeAreaInsets();
+  const totalPaymentText = getTotalPaymentText(transportation, items);
 
   return (
     <Modal
@@ -311,11 +356,28 @@ function TransportationBottomSheet({
                       </Text>
                     </View>
 
-                    {transportation?.totalTimeText ? (
-                      <View className="rounded-[14px] bg-[#EEF4EA] px-[12px] py-[8px]">
-                        <Text className="text-[12px] font-bold text-main-green">
-                          {transportation.totalTimeText}
-                        </Text>
+                    {transportation?.totalTimeText || totalPaymentText ? (
+                      <View className="gap-[6px]">
+                        {transportation?.totalTimeText ? (
+                          <View className="rounded-[14px] bg-[#EEF4EA] px-[12px] py-[8px]">
+                            <Text className="text-[11px] font-bold text-gray-03">
+                              총 시간
+                            </Text>
+                            <Text className="mt-[2px] text-[12px] font-black text-main-green">
+                              {transportation.totalTimeText}
+                            </Text>
+                          </View>
+                        ) : null}
+                        {totalPaymentText ? (
+                          <View className="rounded-[14px] bg-[#FFF8F3] px-[12px] py-[8px]">
+                            <Text className="text-[11px] font-bold text-gray-03">
+                              총 요금
+                            </Text>
+                            <Text className="mt-[2px] text-[12px] font-black text-main-orange">
+                              {totalPaymentText}
+                            </Text>
+                          </View>
+                        ) : null}
                       </View>
                     ) : null}
                   </View>
@@ -454,6 +516,104 @@ function TransportationBottomSheet({
   );
 }
 
+type RouteMapModalProps = {
+  onClose: () => void;
+  places: IPlaceItem[];
+  title?: string;
+  visible: boolean;
+};
+
+function RouteMapModal({ onClose, places, title, visible }: RouteMapModalProps) {
+  const insets = useSafeAreaInsets();
+  const webViewRef = React.useRef<WebViewType | null>(null);
+
+  const postRouteToMap = React.useCallback(() => {
+    const routePlaces = places
+      .map((place, index) => {
+        const latitude = Number(place.lat);
+        const longitude = Number(place.lng);
+
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          return null;
+        }
+
+        return {
+          address: place.address,
+          category: place.category,
+          id: place.place_id ?? `${place.name}-${index}`,
+          latitude,
+          longitude,
+          name: place.name,
+          order: getPlaceOrder(place) || index + 1,
+          place_id: place.place_id,
+          type: "route",
+        };
+      })
+      .filter((place): place is NonNullable<typeof place> => Boolean(place));
+
+    const message = JSON.stringify({
+      payload: {
+        route: {
+          places: routePlaces,
+          title,
+        },
+      },
+      type: "TRIPICK_MAP_DATA",
+    });
+
+    const script = `
+      window.dispatchEvent(new MessageEvent('message', { data: ${JSON.stringify(message)} }));
+      true;
+    `;
+
+    webViewRef.current?.injectJavaScript(script);
+    setTimeout(() => webViewRef.current?.injectJavaScript(script), 400);
+    setTimeout(() => webViewRef.current?.injectJavaScript(script), 1200);
+  }, [places, title]);
+
+  return (
+    <Modal
+      animationType="slide"
+      visible={visible}
+      onRequestClose={onClose}
+    >
+      <View className="flex-1 bg-background">
+        <View
+          className="flex-row items-center justify-between border-b border-gray-04 bg-background px-5 pb-3"
+          style={{ paddingTop: insets.top + 10 }}
+        >
+          <View className="min-w-0 flex-1 pr-3">
+            <Text className="text-[18px] font-black text-gray-01" numberOfLines={1}>
+              지도에서 동선 보기
+            </Text>
+            <Text className="mt-1 text-[12px] text-gray-02" numberOfLines={1}>
+              {title ?? "추천 동선"}
+            </Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            className="h-10 w-10 items-center justify-center rounded-full bg-white"
+            onPress={onClose}
+          >
+            <MaterialCommunityIcons name="close" size={22} color="#3A3A3A" />
+          </Pressable>
+        </View>
+        <WebView
+          ref={webViewRef}
+          className="flex-1"
+          domStorageEnabled
+          geolocationEnabled
+          javaScriptEnabled
+          onLoadEnd={postRouteToMap}
+          originWhitelist={["*"]}
+          source={{ uri: `${KAKAO_MAP_BASE_URL}?mode=route` }}
+          startInLoadingState
+        />
+      </View>
+    </Modal>
+  );
+}
+
 export default function RouteDetailScreen() {
   const { id, source } = useLocalSearchParams<{
     id?: string;
@@ -463,6 +623,7 @@ export default function RouteDetailScreen() {
   const queryClient = useQueryClient();
   const [isTransportationSheetVisible, setIsTransportationSheetVisible] =
     useState(false);
+  const [isRouteMapVisible, setIsRouteMapVisible] = useState(false);
   const isSavedRouteDetail = source === "saved";
   const routeId = id ?? "";
 
@@ -565,6 +726,39 @@ export default function RouteDetailScreen() {
     ...(route?.tags ?? []),
     ...(card?.tags ?? []),
   ]).filter((tag) => !topTags.includes(tag));
+  const getLegAfterPlace = (place: IPlaceItem, index: number) => {
+    const nextPlace = places[index + 1];
+
+    if (!nextPlace) {
+      return null;
+    }
+
+    const routeLeg =
+      route?.route_legs?.find((leg) => leg.order === index + 1) ??
+      route?.route_legs?.find(
+        (leg) =>
+          leg.from_place_id === place.place_id &&
+          leg.to_place_id === nextPlace.place_id,
+      );
+
+    if (routeLeg) {
+      return {
+        distanceText: routeLeg.distance_text,
+        fromName: routeLeg.from_name,
+        toName: routeLeg.to_name,
+      };
+    }
+
+    if (nextPlace.distance_from_previous_text) {
+      return {
+        distanceText: nextPlace.distance_from_previous_text,
+        fromName: place.name,
+        toName: nextPlace.name,
+      };
+    }
+
+    return null;
+  };
   const overviewRows = [
     {
       label: "지역",
@@ -665,7 +859,7 @@ export default function RouteDetailScreen() {
     <View className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
-        contentContainerClassName="px-5 pb-[108px] pt-4"
+        contentContainerClassName="px-5 pb-[168px] pt-4"
         showsVerticalScrollIndicator={false}
       >
         <View className="gap-[22px]">
@@ -882,123 +1076,126 @@ export default function RouteDetailScreen() {
 
           <View className="gap-[12px]">
             <SectionHeader icon="map-marker-path" title="방문 순서" />
-            {places.map((place, index) => (
-              <View
-                key={place.place_id ?? `${place.name}-${index}`}
-                className="min-h-[96px] flex-row items-start rounded-[18px] border border-gray-04/70 bg-white px-[14px] py-[14px]"
-              >
-                <View className="mt-[2px] h-[32px] w-[32px] items-center justify-center rounded-full bg-main-green">
-                  <Text className="text-[15px] font-bold text-white">
-                    {getPlaceOrder(place) || index + 1}
-                  </Text>
-                </View>
+            {places.map((place, index) => {
+              const nextLeg = getLegAfterPlace(place, index);
+              const visibleScoreReasons = filterVisibleScoreReasons(
+                place.score_reasons,
+              );
 
-                <View className="ml-[12px] min-w-0 flex-1">
-                  <View className="flex-row items-baseline gap-[6px]">
-                    <Text
-                      className="text-[16px] font-black text-gray-01"
-                      numberOfLines={1}
-                    >
-                      {place.name}
-                    </Text>
-                    {place.category ? (
-                      <Text className="text-[11px] font-medium text-gray-02">
-                        {place.category}
-                      </Text>
-                    ) : null}
-                  </View>
-                  <Text
-                    className="mt-[6px] text-[12px] leading-4 text-gray-02"
-                    numberOfLines={3}
+              return (
+                <View key={place.place_id ?? `${place.name}-${index}`}>
+                  <View
+                    className="min-h-[96px] flex-row items-start rounded-[18px] border border-gray-04/70 bg-white px-[14px] py-[14px]"
                   >
-                    {getPlaceDescription(place)}
-                  </Text>
-                  {place.contribution_reason || place.local_tip ? (
-                    <Text
-                      className="mt-[6px] text-[12px] leading-4 text-main-green"
-                      numberOfLines={2}
-                    >
-                      {place.contribution_reason ?? place.local_tip}
-                    </Text>
-                  ) : null}
-                  <View className="mt-[8px] flex-row flex-wrap gap-[8px]">
-                    {place.category ? (
-                      <Tag title={place.category} tone="orange" />
-                    ) : null}
-                    {place.stay_minutes ? (
-                      <Tag title={`${place.stay_minutes}분`} tone="orange" />
-                    ) : null}
-                    {typeof place.recommendation_score === "number" ? (
-                      <Tag title={`${place.recommendation_score}점`} tone="green" />
-                    ) : null}
-                    {typeof place.local_contribution_score === "number" ? (
-                      <Tag
-                        title={`기여 ${place.local_contribution_score}점`}
-                        tone="green"
-                      />
-                    ) : null}
-                    {getPlaceCostText(place) ? (
-                      <Tag
-                        title={getPlaceCostText(place) ?? ""}
-                        tone="gray"
-                      />
-                    ) : null}
-                    {place.distance_from_previous_text ? (
-                      <Tag title={place.distance_from_previous_text} tone="blue" />
-                    ) : null}
+                    <View className="mt-[2px] h-[32px] w-[32px] items-center justify-center rounded-full bg-main-green">
+                      <Text className="text-[15px] font-bold text-white">
+                        {getPlaceOrder(place) || index + 1}
+                      </Text>
+                    </View>
+
+                    <View className="ml-[12px] min-w-0 flex-1">
+                      <View className="flex-row items-baseline gap-[6px]">
+                        <Text
+                          className="text-[16px] font-black text-gray-01"
+                          numberOfLines={1}
+                        >
+                          {place.name}
+                        </Text>
+                        {place.category ? (
+                          <Text className="text-[11px] font-medium text-gray-02">
+                            {place.category}
+                          </Text>
+                        ) : null}
+                      </View>
+                      <Text
+                        className="mt-[6px] text-[12px] leading-4 text-gray-02"
+                        numberOfLines={3}
+                      >
+                        {getPlaceDescription(place)}
+                      </Text>
+                      {place.contribution_reason || place.local_tip ? (
+                        <Text
+                          className="mt-[6px] text-[12px] leading-4 text-main-green"
+                          numberOfLines={2}
+                        >
+                          {place.contribution_reason ?? place.local_tip}
+                        </Text>
+                      ) : null}
+                      <View className="mt-[8px] flex-row flex-wrap gap-[8px]">
+                        {place.category ? (
+                          <Tag title={place.category} tone="orange" />
+                        ) : null}
+                        {place.stay_minutes ? (
+                          <Tag title={`${place.stay_minutes}분`} tone="orange" />
+                        ) : null}
+                        {typeof place.recommendation_score === "number" ? (
+                          <Tag
+                            title={`${place.recommendation_score}점`}
+                            tone="green"
+                          />
+                        ) : null}
+                      </View>
+                      {visibleScoreReasons.length ? (
+                        <Text
+                          className="mt-[6px] text-[11px] leading-4 text-gray-03"
+                          numberOfLines={2}
+                        >
+                          {visibleScoreReasons.slice(0, 2).join(" · ")}
+                        </Text>
+                      ) : null}
+                      {place.tags?.length ? (
+                        <View className="mt-[7px] flex-row flex-wrap gap-[6px]">
+                          {place.tags.slice(0, 3).map((tag, tagIndex) => (
+                            <Tag
+                              key={tag}
+                              title={tag}
+                              tone={getRotatingTagTone(tagIndex)}
+                            />
+                          ))}
+                        </View>
+                      ) : null}
+                    </View>
                   </View>
-                  {place.score_reasons?.length ? (
-                    <Text
-                      className="mt-[6px] text-[11px] leading-4 text-gray-03"
-                      numberOfLines={2}
-                    >
-                      {place.score_reasons.slice(0, 2).join(" · ")}
-                    </Text>
-                  ) : null}
-                  {place.tags?.length ? (
-                    <View className="mt-[7px] flex-row flex-wrap gap-[6px]">
-                      {place.tags.slice(0, 3).map((tag, tagIndex) => (
-                        <Tag
-                          key={tag}
-                          title={tag}
-                          tone={getRotatingTagTone(tagIndex)}
+
+                  {nextLeg ? (
+                    <View className="mx-[18px] flex-row items-center py-[8px]">
+                      <View className="mr-[10px] h-[28px] w-[28px] items-center justify-center rounded-full bg-[#EEF4EA]">
+                        <MaterialCommunityIcons
+                          name="arrow-down"
+                          size={16}
+                          color="#739E6B"
                         />
-                      ))}
+                      </View>
+                      <View className="min-w-0 flex-1 flex-row items-center rounded-[14px] bg-[#F7FAF5] px-[12px] py-[9px]">
+                        <Text
+                          className="min-w-0 flex-1 text-[12px] font-medium text-gray-02"
+                          numberOfLines={1}
+                        >
+                          {nextLeg.fromName} → {nextLeg.toName}
+                        </Text>
+                        <Text className="ml-[10px] text-[12px] font-black text-main-green">
+                          {nextLeg.distanceText}
+                        </Text>
+                      </View>
                     </View>
                   ) : null}
                 </View>
-
-              </View>
-            ))}
+              );
+            })}
           </View>
-
-          {route.route_legs?.length ? (
-            <SectionCard>
-              <SectionHeader icon="map-marker-distance" title="이동 거리" />
-              <View className="mt-[12px] gap-[10px]">
-                {route.route_legs.map((leg) => (
-                  <View
-                    key={`${leg.from_place_id}-${leg.to_place_id}-${leg.order}`}
-                    className="flex-row items-center rounded-[14px] bg-[#FAFAFA] px-[12px] py-[10px]"
-                  >
-                    <Text
-                      className="min-w-0 flex-1 text-[12px] font-medium text-gray-02"
-                      numberOfLines={1}
-                    >
-                      {leg.from_name} → {leg.to_name}
-                    </Text>
-                    <Text className="ml-[10px] text-[12px] font-bold text-main-green">
-                      {leg.distance_text}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </SectionCard>
-          ) : null}
         </View>
       </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 border-t border-gray-04/70 bg-background px-5 pb-6 pt-3">
+      <View className="absolute bottom-0 left-0 right-0 gap-2 border-t border-gray-04/70 bg-background px-5 pb-6 pt-3">
+        <Pressable
+          className="h-[48px] flex-row items-center justify-center rounded-[14px] bg-main-orange"
+          onPress={() => setIsRouteMapVisible(true)}
+        >
+          <MaterialCommunityIcons name="map-marker-path" size={20} color="#FFFFFF" />
+          <Text className="ml-[8px] text-[15px] font-bold text-white">
+            지도에서 동선 보기
+          </Text>
+        </Pressable>
         {isSavedRouteDetail ? (
           <Pressable
             className="h-[48px] flex-row items-center justify-center rounded-[14px] bg-main-blue"
@@ -1032,6 +1229,12 @@ export default function RouteDetailScreen() {
         onClose={() => setIsTransportationSheetVisible(false)}
         transportation={transportation}
         visible={isSavedRouteDetail && isTransportationSheetVisible}
+      />
+      <RouteMapModal
+        onClose={() => setIsRouteMapVisible(false)}
+        places={places}
+        title={route.title}
+        visible={isRouteMapVisible}
       />
     </View>
   );

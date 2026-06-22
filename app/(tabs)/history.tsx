@@ -1,16 +1,24 @@
 import deleteRoute from "@/api/routes/deleteRoute";
 import getRoutes from "@/api/routes/getRoutes";
+import getMissionsList from "@/api/missions/getMissionsList";
 import getEmblems from "@/api/stampsAndEmblems/getEmblems";
+import getStamps from "@/api/stampsAndEmblems/getStamps";
 import EmblemItem from "@/components/history/EmblemItem";
 import ItemOptions, { HistoryOption } from "@/components/history/ItemOptions";
 import MissionItem from "@/components/history/MissionItem";
+import SmallEmblemItem from "@/components/history/SmallEmblemItem";
 import StampCoupon from "@/components/history/StampCoupon";
 import { useAuthStore } from "@/store/login/useAuthStore";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { router } from "expo-router";
-import { useState } from "react";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { router, useLocalSearchParams } from "expo-router";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -20,20 +28,32 @@ import {
   View,
 } from "react-native";
 
-const DEFAULT_REGION_ID = "1";
+const ALL_REGION_ID = "__all__";
+const EMBLEM_REGION_OPTION_PREFIX = "emblem-region:";
 
-const missions = [
+const fallbackMissions: IGetMissionItemResponse[] = [
   {
+    mission_id: "local-market-snack",
     title: "로컬 시장에서 간식 먹기",
-    rewardText: "사진 업로드 · 스탬프 1개",
+    stamp_count: 1,
     difficulty: "쉬움",
+    is_completed: false,
   },
   {
+    mission_id: "beach-walk",
     title: "고성 바다 산책하기",
-    rewardText: "위치 인증 · 스탬프 1개",
+    stamp_count: 1,
     difficulty: "쉬움",
+    is_completed: false,
   },
 ];
+
+type RegionOption = {
+  id: string;
+  label: string;
+};
+
+type EmblemViewMode = "list" | "grid";
 
 const formatSavedDate = (date?: string) => {
   if (!date) {
@@ -65,6 +85,100 @@ const getRouteSummary = (route: IRouteRecommendation) =>
     .join(" · ") ||
   (route.place_count ? `${route.place_count}개 장소로 구성된 추천 동선` : "저장한 추천 동선");
 
+const inferRegionLabel = (text?: string) => {
+  if (!text) {
+    return undefined;
+  }
+
+  const normalizedText = text.replace(/\n/g, " ").trim();
+
+  if (!normalizedText) {
+    return undefined;
+  }
+
+  return normalizedText.split(" ")[0];
+};
+
+const normalizeRegionLabel = (label?: string) => {
+  const inferredLabel = inferRegionLabel(label);
+
+  if (!inferredLabel) {
+    return undefined;
+  }
+
+  return inferredLabel.replace(/(군|시)$/u, "");
+};
+
+const buildRegionOptions = (
+  stamps: IGetStampsResponse = [],
+  emblems: IGetEmblemsResponse = [],
+) => {
+  const regionOptionsByLabel = new Map<string, RegionOption>();
+  const getFallbackRegionLabel = () =>
+    `지역 ${regionOptionsByLabel.size + 1}`;
+  const upsertRegionOption = (id: string, label?: string) => {
+    const normalizedLabel = normalizeRegionLabel(label);
+
+    if (!normalizedLabel) {
+      return;
+    }
+
+    const existingOption = regionOptionsByLabel.get(normalizedLabel);
+
+    if (
+      existingOption &&
+      !existingOption.id.startsWith(EMBLEM_REGION_OPTION_PREFIX)
+    ) {
+      return;
+    }
+
+    regionOptionsByLabel.set(normalizedLabel, {
+      id,
+      label: normalizedLabel,
+    });
+  };
+
+  stamps.forEach((stamp) => {
+    const matchingEmblem = emblems.find(
+      (emblem) => emblem.region_id === stamp.region_id,
+    );
+
+    upsertRegionOption(
+      String(stamp.region_id),
+      stamp.region_name ??
+        matchingEmblem?.region_name ??
+        inferRegionLabel(matchingEmblem?.name) ??
+        getFallbackRegionLabel(),
+    );
+  });
+
+  emblems.forEach((emblem) => {
+    const emblemRegionLabel =
+      emblem.region_name ?? inferRegionLabel(emblem.name);
+
+    if (emblem.region_id) {
+      upsertRegionOption(String(emblem.region_id), emblemRegionLabel);
+      return;
+    }
+
+    const normalizedRegionLabel = normalizeRegionLabel(emblemRegionLabel);
+
+    if (!normalizedRegionLabel) {
+      return;
+    }
+
+    upsertRegionOption(
+      `${EMBLEM_REGION_OPTION_PREFIX}${normalizedRegionLabel}`,
+      normalizedRegionLabel,
+    );
+  });
+
+  return [
+    { id: ALL_REGION_ID, label: "전체" },
+    ...Array.from(regionOptionsByLabel.values()),
+  ];
+};
+
 function SectionTitle({
   title,
   actionText,
@@ -80,6 +194,115 @@ function SectionTitle({
           {actionText}
         </Text>
       ) : null}
+    </View>
+  );
+}
+
+function RegionDropdown({
+  options,
+  selectedRegionId,
+  onSelectRegion,
+}: {
+  options: RegionOption[];
+  selectedRegionId: string;
+  onSelectRegion: (regionId: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption =
+    options.find((option) => option.id === selectedRegionId) ?? options[0];
+
+  if (!selectedOption) {
+    return null;
+  }
+
+  return (
+    <View className="relative z-20 w-[118px]">
+      <Pressable
+        accessibilityRole="button"
+        className="h-[38px] flex-row items-center justify-between rounded-full border border-gray-04 bg-white px-3"
+        onPress={() => setIsOpen((prev) => !prev)}
+      >
+        <Text
+          className="min-w-0 flex-1 text-[13px] font-bold text-gray-02"
+          numberOfLines={1}
+        >
+          {selectedOption.label}
+        </Text>
+        <MaterialCommunityIcons
+          name={isOpen ? "chevron-up" : "chevron-down"}
+          size={18}
+          color="#A59A93"
+        />
+      </Pressable>
+
+      {isOpen ? (
+        <View className="absolute right-0 top-[44px] w-[142px] overflow-hidden rounded-[16px] border border-gray-04 bg-white shadow-sm">
+          {options.map((option) => (
+            <Pressable
+              key={option.id}
+              className={`px-4 py-3 ${
+                option.id === selectedRegionId ? "bg-main-light-orange" : ""
+              }`}
+              onPress={() => {
+                onSelectRegion(option.id);
+                setIsOpen(false);
+              }}
+            >
+              <Text
+                className={`text-[13px] ${
+                  option.id === selectedRegionId
+                    ? "font-bold text-main-orange"
+                    : "font-medium text-gray-02"
+                }`}
+                numberOfLines={1}
+              >
+                {option.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function EmblemViewToggle({
+  mode,
+  onChangeMode,
+}: {
+  mode: EmblemViewMode;
+  onChangeMode: (mode: EmblemViewMode) => void;
+}) {
+  return (
+    <View className="flex-row rounded-full border border-gray-04 bg-white p-1">
+      <Pressable
+        accessibilityLabel="엠블럼 목록 보기"
+        accessibilityRole="button"
+        className={`h-8 w-8 items-center justify-center rounded-full ${
+          mode === "list" ? "bg-main-green" : ""
+        }`}
+        onPress={() => onChangeMode("list")}
+      >
+        <MaterialCommunityIcons
+          name="format-list-bulleted"
+          size={18}
+          color={mode === "list" ? "#FFFFFF" : "#A59A93"}
+        />
+      </Pressable>
+      <Pressable
+        accessibilityLabel="엠블럼 격자 보기"
+        accessibilityRole="button"
+        className={`h-8 w-8 items-center justify-center rounded-full ${
+          mode === "grid" ? "bg-main-green" : ""
+        }`}
+        onPress={() => onChangeMode("grid")}
+      >
+        <MaterialCommunityIcons
+          name="view-grid-outline"
+          size={18}
+          color={mode === "grid" ? "#FFFFFF" : "#A59A93"}
+        />
+      </Pressable>
     </View>
   );
 }
@@ -201,13 +424,58 @@ function SavedTripCard({
 export default function HistoryScreen() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const [selectedOption, setSelectedOption] = useState<HistoryOption>("전체");
+  const [emblemViewMode, setEmblemViewMode] =
+    useState<EmblemViewMode>("list");
+  const { regionId } = useLocalSearchParams<{ regionId?: string }>();
   const queryClient = useQueryClient();
 
-  const { data: emblems } = useQuery({
-    queryKey: ["EMBLEMS", accessToken],
+  const { data: allStamps = [], isLoading: isAllStampsLoading } = useQuery({
+    queryKey: ["STAMPS", accessToken, "all"],
+    queryFn: () => getStamps(accessToken),
+    enabled: Boolean(accessToken),
+    retry: false,
+  });
+
+  const { data: allEmblems = [] } = useQuery({
+    queryKey: ["EMBLEMS", accessToken, "all"],
     queryFn: () => getEmblems(accessToken),
     enabled: Boolean(accessToken),
     retry: false,
+  });
+
+  const regionOptions = useMemo(
+    () => buildRegionOptions(allStamps, allEmblems),
+    [allEmblems, allStamps],
+  );
+  const selectedRegionId = regionId ?? ALL_REGION_ID;
+  const selectedRegionOption =
+    regionOptions.find((option) => option.id === selectedRegionId) ??
+    regionOptions[0];
+  const isAllRegionsSelected = selectedRegionId === ALL_REGION_ID;
+  const isEmblemRegionOption = selectedRegionId.startsWith(
+    EMBLEM_REGION_OPTION_PREFIX,
+  );
+  const selectedRegionQueryId =
+    isAllRegionsSelected || isEmblemRegionOption ? undefined : selectedRegionId;
+  const ownedRegionOptions = regionOptions.filter(
+    (option) =>
+      option.id !== ALL_REGION_ID &&
+      !option.id.startsWith(EMBLEM_REGION_OPTION_PREFIX),
+  );
+
+  const { data: missionData, isLoading: isMissionsLoading } = useQuery({
+    queryKey: ["MISSIONS", selectedRegionId, accessToken],
+    queryFn: () => getMissionsList(accessToken, selectedRegionId),
+    enabled: Boolean(accessToken && selectedRegionQueryId),
+    retry: false,
+  });
+  const allMissionResults = useQueries({
+    queries: ownedRegionOptions.map((option) => ({
+      queryKey: ["MISSIONS", option.id, accessToken],
+      queryFn: () => getMissionsList(accessToken, option.id),
+      enabled: Boolean(accessToken && !selectedRegionQueryId),
+      retry: false,
+    })),
   });
 
   const {
@@ -215,8 +483,8 @@ export default function HistoryScreen() {
     isError: isSavedRoutesError,
     isLoading: isSavedRoutesLoading,
   } = useQuery({
-    queryKey: ["SAVED_ROUTES", accessToken],
-    queryFn: () => getRoutes(accessToken),
+    queryKey: ["SAVED_ROUTES", accessToken, selectedRegionQueryId ?? "all"],
+    queryFn: () => getRoutes(accessToken, selectedRegionQueryId),
     enabled: Boolean(accessToken),
     retry: false,
   });
@@ -240,7 +508,41 @@ export default function HistoryScreen() {
   const showRoutes = selectedOption === "전체" || selectedOption === "동선";
   const showStamps = selectedOption === "전체" || selectedOption === "스탬프";
   const showEmblems = selectedOption === "전체" || selectedOption === "엠블럼";
-  const visibleEmblems = emblems?.length ? emblems : [];
+  const visibleEmblems = isAllRegionsSelected
+    ? allEmblems
+    : allEmblems.filter((emblem) => {
+        const emblemRegionLabel =
+          normalizeRegionLabel(emblem.region_name) ??
+          normalizeRegionLabel(emblem.name);
+        const selectedRegionLabel = normalizeRegionLabel(
+          selectedRegionOption?.label,
+        );
+
+        return (
+          emblem.region_id === selectedRegionId ||
+          emblemRegionLabel === selectedRegionLabel
+        );
+      });
+  const allRegionMissions = allMissionResults.flatMap(
+    (result) => result.data ?? [],
+  );
+  const isAllMissionsLoading = allMissionResults.some(
+    (result) => result.isLoading,
+  );
+  const missions = !selectedRegionQueryId
+    ? allRegionMissions
+    : missionData?.length
+      ? missionData
+      : fallbackMissions;
+  const inProgressMissions = missions.filter((mission) => !mission.is_completed);
+  const completedMissions = missions.filter((mission) => mission.is_completed);
+  const isMissionListLoading = !selectedRegionQueryId
+    ? isAllMissionsLoading
+    : isMissionsLoading;
+
+  const handleSelectRegion = (nextRegionId: string) => {
+    router.setParams({ regionId: nextRegionId });
+  };
 
   return (
     <ScrollView
@@ -256,10 +558,23 @@ export default function HistoryScreen() {
           </Text>
         </View>
 
-        <ItemOptions
-          selectedOption={selectedOption}
-          onSelectOption={setSelectedOption}
-        />
+        <View className="z-20 flex-row items-center gap-2">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="min-w-0 flex-1"
+          >
+            <ItemOptions
+              selectedOption={selectedOption}
+              onSelectOption={setSelectedOption}
+            />
+          </ScrollView>
+          <RegionDropdown
+            options={regionOptions}
+            selectedRegionId={selectedRegionId}
+            onSelectRegion={handleSelectRegion}
+          />
+        </View>
         {showRoutes ? (
           <View className="gap-3">
             <SectionTitle
@@ -322,18 +637,96 @@ export default function HistoryScreen() {
         {showStamps ? (
           <View className="gap-3">
             <SectionTitle title="스탬프 쿠폰" />
-            <StampCoupon regionId={DEFAULT_REGION_ID} />
+            {!selectedRegionQueryId ? (
+              isAllStampsLoading ? (
+                <View className="min-h-[96px] items-center justify-center rounded-[18px] bg-white">
+                  <ActivityIndicator color="#739E6B" />
+                  <Text className="mt-3 text-[13px] font-medium text-gray-02">
+                    스탬프를 불러오는 중이에요
+                  </Text>
+                </View>
+              ) : allStamps.length ? (
+                allStamps.map((stamp) => (
+                  <StampCoupon key={stamp.region_id} regionId={stamp.region_id} />
+                ))
+              ) : (
+                <View className="min-h-[96px] items-center justify-center rounded-[18px] bg-white px-5">
+                  <Text className="text-[14px] font-bold text-gray-01">
+                    모은 스탬프가 없어요
+                  </Text>
+                </View>
+              )
+            ) : (
+              <StampCoupon regionId={selectedRegionId} />
+            )}
             {selectedOption === "스탬프" ? (
-              <View className="gap-3">
-                <SectionTitle title="진행 중인 미션" />
-                {missions.map((mission) => (
-                  <MissionItem
-                    key={mission.title}
-                    title={mission.title}
-                    rewardText={mission.rewardText}
-                    difficulty={mission.difficulty}
-                  />
-                ))}
+              <View className="gap-5">
+                {isMissionListLoading ? (
+                  <View className="min-h-[96px] items-center justify-center rounded-[18px] bg-white">
+                    <ActivityIndicator color="#739E6B" />
+                    <Text className="mt-3 text-[13px] font-medium text-gray-02">
+                      미션을 불러오는 중이에요
+                    </Text>
+                  </View>
+                ) : missions.length === 0 ? (
+                  <View className="min-h-[96px] items-center justify-center rounded-[18px] bg-white px-5">
+                    <Text className="text-[14px] font-bold text-gray-01">
+                      표시할 미션이 없어요
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <View className="gap-3">
+                      <SectionTitle
+                        title="진행 중인 미션"
+                        actionText={`${inProgressMissions.length}개`}
+                      />
+                      {inProgressMissions.length ? (
+                        inProgressMissions.map((mission) => (
+                          <MissionItem
+                            key={mission.mission_id}
+                            missionId={mission.mission_id}
+                            title={mission.title}
+                            rewardText={`스탬프 ${mission.stamp_count}개`}
+                            difficulty={mission.difficulty}
+                            isCompleted={false}
+                          />
+                        ))
+                      ) : (
+                        <View className="min-h-[96px] items-center justify-center rounded-[18px] bg-white px-5">
+                          <Text className="text-[14px] font-bold text-gray-01">
+                            진행 중인 미션이 없어요
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <View className="gap-3">
+                      <SectionTitle
+                        title="완료한 미션"
+                        actionText={`${completedMissions.length}개`}
+                      />
+                      {completedMissions.length ? (
+                        completedMissions.map((mission) => (
+                          <MissionItem
+                            key={mission.mission_id}
+                            missionId={mission.mission_id}
+                            title={mission.title}
+                            rewardText={`스탬프 ${mission.stamp_count}개`}
+                            difficulty={mission.difficulty}
+                            isCompleted
+                          />
+                        ))
+                      ) : (
+                        <View className="min-h-[96px] items-center justify-center rounded-[18px] bg-white px-5">
+                          <Text className="text-[14px] font-bold text-gray-01">
+                            완료한 미션이 없어요
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </>
+                )}
               </View>
             ) : null}
           </View>
@@ -341,11 +734,40 @@ export default function HistoryScreen() {
 
         {showEmblems ? (
           <View className="gap-3">
-            <SectionTitle
-              title="획득한 엠블럼"
-              actionText={`${visibleEmblems.length || 3}개`}
-            />
-            {visibleEmblems.length ? (
+            <View className="flex-row items-center justify-between gap-3">
+              <View className="min-w-0 flex-1">
+                <SectionTitle
+                  title="획득한 엠블럼"
+                  actionText={`${visibleEmblems.length || 3}개`}
+                />
+              </View>
+              <EmblemViewToggle
+                mode={emblemViewMode}
+                onChangeMode={setEmblemViewMode}
+              />
+            </View>
+            {emblemViewMode === "grid" ? (
+              <View className="flex-row flex-wrap gap-3 rounded-[22px] bg-white p-4">
+                {visibleEmblems.length ? (
+                  visibleEmblems.map((emblem) => (
+                    <SmallEmblemItem
+                      key={emblem.emblem_id}
+                      variant="icon"
+                      title={emblem.name}
+                      description={emblem.description}
+                      imageUrl={emblem.image_url}
+                      acquiredDate={emblem.acquired_at}
+                    />
+                  ))
+                ) : (
+                  <>
+                    <SmallEmblemItem variant="icon" type="master" />
+                    <SmallEmblemItem variant="icon" type="traveler" />
+                    <SmallEmblemItem variant="icon" type="explorer" />
+                  </>
+                )}
+              </View>
+            ) : visibleEmblems.length ? (
               visibleEmblems.map((emblem) => (
                 <EmblemItem
                   key={emblem.emblem_id}
@@ -353,6 +775,7 @@ export default function HistoryScreen() {
                   imageUrl={emblem.image_url}
                   completedMissionCount={emblem.unlock_stamp_threshold}
                   acquiredDate={emblem.acquired_at}
+                  description={emblem.description}
                 />
               ))
             ) : (

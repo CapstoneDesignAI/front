@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import EmblemImageModal from "./EmblemImageModal";
+import { formatAcquiredDate } from "./formatAcquiredDate";
 
 type SmallEmblemType = "traveler" | "explorer" | "master";
 type RegionType = "Danyang" | "Hwacheon";
@@ -10,11 +11,14 @@ type RegionType = "Danyang" | "Hwacheon";
 type SmallEmblemItemProps = {
   type?: SmallEmblemType;
   region?: RegionType;
+  variant?: "card" | "icon";
   title?: string;
   subtitle?: string;
+  description?: string;
   status?: string;
   isLocked?: boolean;
   imageUrl?: string | null;
+  acquiredDate?: string;
 };
 
 const REGIONAL_EMBLEMS = {
@@ -51,11 +55,14 @@ const REGIONAL_EMBLEMS = {
 export default function SmallEmblemItem({
   type: providedType,
   region: providedRegion,
+  variant = "card",
   title,
   subtitle,
+  description,
   status = "획득 완료",
   isLocked = false,
   imageUrl,
+  acquiredDate,
 }: SmallEmblemItemProps) {
   // title이나 subtitle을 기반으로 지역과 타입을 추론합니다
   const inferRegionAndType = () => {
@@ -92,9 +99,49 @@ export default function SmallEmblemItem({
   const emblem = REGIONAL_EMBLEMS[region][type];
   const [isModalVisible, setIsModalVisible] = useState(false);
   const resolvedTitle = title ?? subtitle ?? emblem.title;
+  const displayStatus = formatAcquiredDate(acquiredDate) ?? status;
   
   // 이름이 매치되면 로컬 이미지를 우선적으로 사용하고, 아니면 전달받은 imageUrl을 사용합니다.
   const source = isMatched ? emblem.image : (imageUrl ? { uri: imageUrl } : emblem.image);
+
+  if (variant === "icon") {
+    return (
+      <>
+        <Pressable
+          accessibilityLabel={
+            isLocked ? resolvedTitle : `${resolvedTitle} 엠블럼 크게 보기`
+          }
+          accessibilityRole="button"
+          className="h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-[18px] bg-white"
+          disabled={isLocked}
+          onPress={() => setIsModalVisible(true)}
+          style={{
+            borderColor: isLocked ? "#D9D9D9" : "#E0D6C2",
+            borderWidth: 1,
+          }}
+        >
+          {isLocked ? (
+            <MaterialCommunityIcons name="help" size={24} color="#8C8C8C" />
+          ) : (
+            <ExpoImage
+              source={source}
+              className="h-full w-full"
+              contentFit="cover"
+            />
+          )}
+        </Pressable>
+
+        <EmblemImageModal
+          description={description}
+          detail={displayStatus}
+          source={source}
+          title={resolvedTitle}
+          visible={isModalVisible}
+          onClose={() => setIsModalVisible(false)}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -135,11 +182,13 @@ export default function SmallEmblemItem({
         </Text>
 
         <Text className="mt-[2px] text-center text-[10px] leading-[13px] text-gray-03">
-          {status}
+          {displayStatus}
         </Text>
       </Pressable>
 
       <EmblemImageModal
+        description={description}
+        detail={displayStatus}
         source={source}
         title={resolvedTitle}
         visible={isModalVisible}

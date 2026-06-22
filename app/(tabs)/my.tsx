@@ -137,8 +137,9 @@ export default function MyScreen() {
                   <SmallEmblemItem
                     key={emblem.emblem_id}
                     title={emblem.name}
+                    description={emblem.description}
                     imageUrl={emblem.image_url}
-                    status="획득 완료"
+                    acquiredDate={emblem.acquired_at}
                   />
                 ))
               : acquiredEmblems.map((emblem) => (

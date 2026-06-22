@@ -15,9 +15,10 @@ const unwrapRoutes = (data: unknown): IRouteRecommendation[] => {
   return Array.isArray(candidate) ? (candidate as IRouteRecommendation[]) : [];
 };
 
-export default async function getRoutes(authorization: string) {
+export default async function getRoutes(authorization: string, regionId?: string) {
+  const query = regionId ? `?region_id=${encodeURIComponent(regionId)}` : "";
   const data = await api.get<unknown>({
-    endpoint: "/routes",
+    endpoint: `/routes${query}`,
     authorization,
   });
 

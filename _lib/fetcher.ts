@@ -27,6 +27,20 @@ interface IDeleteOptions {
   authorization: string;
 }
 
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+  data: unknown;
+
+  constructor(message: string, status: number, code?: string, data?: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.data = data;
+  }
+}
+
 const parseResponseBody = async (response: Response) => {
   const text = await response.text();
 
@@ -65,6 +79,13 @@ const getErrorMessage = (data: unknown, fallback: string) => {
       return errorData.detail;
     }
 
+    if (errorData.detail && typeof errorData.detail === "object") {
+      const detail = errorData.detail as { message?: unknown };
+      if (typeof detail.message === "string") {
+        return detail.message;
+      }
+    }
+
     if (Array.isArray(errorData.detail)) {
       return errorData.detail
         .map((item) =>
@@ -77,6 +98,26 @@ const getErrorMessage = (data: unknown, fallback: string) => {
   }
 
   return fallback;
+};
+
+const getErrorCode = (data: unknown) => {
+  if (!data || typeof data !== "object") {
+    return undefined;
+  }
+
+  const errorData = data as { code?: unknown; detail?: unknown };
+  if (typeof errorData.code === "string") {
+    return errorData.code;
+  }
+
+  if (errorData.detail && typeof errorData.detail === "object") {
+    const detail = errorData.detail as { code?: unknown };
+    if (typeof detail.code === "string") {
+      return detail.code;
+    }
+  }
+
+  return undefined;
 };
 
 const postRefresh = async (refreshToken: string) => {
@@ -190,8 +231,11 @@ const _fetch = async <T = unknown, R = unknown>({
         }
       }
       const errorData = await parseResponseBody(res);
-      throw new Error(
+      throw new ApiError(
         getErrorMessage(errorData, `Request failed with status ${res.status}`),
+        res.status,
+        getErrorCode(errorData),
+        errorData,
       );
     }
     return (await parseResponseBody(res)) as R;

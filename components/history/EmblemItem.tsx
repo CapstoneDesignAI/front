@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import EmblemImageModal from "./EmblemImageModal";
+import { formatAcquiredDate } from "./formatAcquiredDate";
 
 type EmblemType = "traveler" | "explorer" | "master";
 type RegionType = "Danyang" | "Hwacheon";
@@ -10,6 +11,7 @@ type EmblemItemProps = {
   type?: EmblemType;
   region?: RegionType;
   title?: string;
+  description?: string;
   imageUrl?: string | null;
   label?: string;
   completedMissionCount?: number;
@@ -53,6 +55,7 @@ export default function EmblemItem({
   type: providedType,
   region: providedRegion,
   title,
+  description: providedDescription,
   imageUrl,
   completedMissionCount = 5,
   acquiredDate = "2026.05.30",
@@ -93,6 +96,7 @@ export default function EmblemItem({
   const emblem = REGIONAL_EMBLEMS[region][type];
   const [isModalVisible, setIsModalVisible] = useState(false);
   const resolvedTitle = title ?? emblem.title;
+  const acquiredDateText = formatAcquiredDate(acquiredDate);
   
   // 이름이 매치되면 로컬 이미지를 우선적으로 사용하고, 아니면 전달받은 imageUrl을 사용합니다.
   const source = isMatched ? emblem.image : (imageUrl ? { uri: imageUrl } : emblem.image);
@@ -125,7 +129,7 @@ export default function EmblemItem({
               className="text-[14px] leading-5 text-gray-02"
               numberOfLines={1}
             >
-              완료 미션 {completedMissionCount}개 · {acquiredDate} 획득
+              {acquiredDateText ?? "획득일 정보 없음"}
             </Text>
           </View>
 
@@ -141,6 +145,8 @@ export default function EmblemItem({
       </Pressable>
 
       <EmblemImageModal
+        description={providedDescription}
+        detail={acquiredDateText ?? "획득일 정보 없음"}
         source={source}
         title={resolvedTitle}
         visible={isModalVisible}

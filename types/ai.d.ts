@@ -278,6 +278,9 @@ interface IRouteTransportationItem {
   transport?: string;
   distance?: string;
   distanceText?: string;
+  distance_text?: string;
+  distanceFromPreviousText?: string;
+  distance_from_previous_text?: string;
   durationText?: string;
   moveTimeText?: string;
   timeText?: string;
@@ -289,6 +292,10 @@ interface IGetRouteTransportationResponse {
   available: boolean;
   title?: string;
   totalTimeText?: string;
+  totalPayment?: number;
+  totalPaymentText?: string;
+  totalFare?: number;
+  totalFareText?: string;
   summaryText?: string;
   firstStart?: string;
   lastArrival?: string;

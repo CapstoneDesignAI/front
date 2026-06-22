@@ -1,8 +1,11 @@
+import getBookmarkedPlaces from "@/api/bookmarks/getBookmarkedPlaces";
 import { useAuthStore } from "@/store/login/useAuthStore";
+import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Text, View } from "react-native";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
+import type { WebView as WebViewType } from "react-native-webview";
 
 import BottomSheet from "@/components/maps/BottomSheet";
 import { ThemedView } from "@/components/themed-view";
@@ -55,6 +58,13 @@ export default function MapsScreen() {
   const { folder_id } = useLocalSearchParams<{ folder_id?: string }>();
   const [pendingPlace, setPendingPlace] = useState<IKakaoPlacePayload | null>(null);
   const [targetFolderId, setTargetFolderId] = useState<string | null>(null);
+  const webViewRef = useRef<WebViewType | null>(null);
+
+  const { data: bookmarkedPlaces } = useQuery({
+    queryKey: ["BOOKMARKED_PLACES", accessToken],
+    queryFn: () => getBookmarkedPlaces(accessToken),
+    enabled: Boolean(accessToken),
+  });
 
   const kakaoMapWebUrl = useMemo(() => {
     if (!folder_id) return KAKAO_MAP_BASE_URL;
@@ -62,6 +72,39 @@ export default function MapsScreen() {
     url.searchParams.set("folder_id", folder_id);
     return url.toString();
   }, [folder_id]);
+
+  const postMapDataToWebView = useCallback(() => {
+    const bookmarks = (bookmarkedPlaces ?? [])
+      .filter(
+        (place) =>
+          typeof place.latitude === "number" &&
+          typeof place.longitude === "number",
+      )
+      .map((place) => ({
+        address: place.address,
+        category: place.category,
+        id: place.bookmark_id,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        name: place.name,
+        place_id: place.place_id,
+        type: "bookmark",
+      }));
+
+    const message = JSON.stringify({
+      payload: { bookmarks },
+      type: "TRIPICK_MAP_DATA",
+    });
+
+    webViewRef.current?.injectJavaScript(`
+      window.dispatchEvent(new MessageEvent('message', { data: ${JSON.stringify(message)} }));
+      true;
+    `);
+  }, [bookmarkedPlaces]);
+
+  useEffect(() => {
+    postMapDataToWebView();
+  }, [postMapDataToWebView]);
 
   const handleMapMessage = (event: WebViewMessageEvent) => {
     let parsedMessage: unknown;
@@ -101,13 +144,16 @@ export default function MapsScreen() {
     <ThemedView className="flex-1 bg-background">
       <View className="relative flex-1 overflow-hidden bg-background">
         <WebView
+          ref={webViewRef}
           source={{ uri: kakaoMapWebUrl }}
           className="flex-1"
           originWhitelist={["*"]}
           startInLoadingState
           javaScriptEnabled
           domStorageEnabled
+          geolocationEnabled
           onMessage={handleMapMessage}
+          onLoadEnd={postMapDataToWebView}
           renderError={() => (
             <View className="flex-1 items-center justify-center p-6">
               <Text className="text-base font-bold text-gray-01">

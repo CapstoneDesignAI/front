@@ -8,6 +8,8 @@ type EmblemImageSource = React.ComponentProps<typeof ExpoImage>["source"];
 type EmblemImageModalProps = {
   source: EmblemImageSource;
   title: string;
+  description?: string;
+  detail?: string;
   visible: boolean;
   onClose: () => void;
 };
@@ -15,9 +17,13 @@ type EmblemImageModalProps = {
 export default function EmblemImageModal({
   source,
   title,
+  description,
+  detail,
   visible,
   onClose,
 }: EmblemImageModalProps) {
+  const normalizedTitle = title.replace(/\n/g, " ");
+
   return (
     <Modal
       animationType="fade"
@@ -34,13 +40,7 @@ export default function EmblemImageModal({
         />
 
         <View className="w-full max-w-[340px] items-center rounded-[28px] bg-white px-6 pb-6 pt-5">
-          <View className="mb-4 w-full flex-row items-center justify-between">
-            <Text
-              className="min-w-0 flex-1 pr-3 text-[18px] font-black text-gray-01"
-              numberOfLines={1}
-            >
-              {title}
-            </Text>
+          <View className="mb-4 w-full items-end">
             <Pressable
               accessibilityLabel="닫기"
               accessibilityRole="button"
@@ -57,6 +57,25 @@ export default function EmblemImageModal({
               className="h-full w-full"
               contentFit="contain"
             />
+          </View>
+
+          <View className="mt-5 w-full items-center">
+            <Text
+              className="text-center text-[20px] font-black leading-6 text-gray-01"
+              numberOfLines={2}
+            >
+              {normalizedTitle}
+            </Text>
+            {description ? (
+              <Text className="mt-2 text-center text-[14px] leading-5 text-gray-02">
+                {description}
+              </Text>
+            ) : null}
+            {detail ? (
+              <Text className="mt-3 rounded-full bg-main-light-orange px-3 py-1 text-center text-[12px] font-bold text-main-orange">
+                {detail}
+              </Text>
+            ) : null}
           </View>
         </View>
       </View>
